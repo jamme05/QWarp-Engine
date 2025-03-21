@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name= "qw::Graphics::cDynamic_buffer&lt;*&gt;">
+		<Intrinsic Name="size"     Expression="m_data.current - m_data.start" />
+		<Intrinsic Name="capacity" Expression="m_data.limit   - m_data.start" />
+		<DisplayString>
+			{{ size={size()} }}
+		</DisplayString>
+		<Expand>
+			<Item Name="[size]">size()</Item>
+			<Item Name="[capacity]">capacity()</Item>
+			<Item Name="[buffer]">m_buffer</Item>
+			<ArrayItems>
+				<Size>size()</Size>
+				<ValuePointer>m_data->start</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name= "qw::Graphics::cRender_context">
+		<Intrinsic Name="count" Expression="m_context_count" />
+		<DisplayString>
+			{{ count={count()} }}
+		</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>count()</Size>
+				<ValuePointer>m_contexts</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name= "qw::Graphics::cContext">
+		<Intrinsic Name="count" Expression="m_render_target_count" />
+		<DisplayString>
+			{{ count={count()} }}
+		</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>count()</Size>
+				<ValuePointer>m_render_targets</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+</AutoVisualizer>
