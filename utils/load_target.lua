@@ -1,6 +1,7 @@
 
 include "../build_target"
 
+local fallback_dir  = "../src/base/"
 local core_dir      = "../src/core/"
 local platform_file = "/platform_id"
 
@@ -16,8 +17,10 @@ function check_platform_id( path )
         local c = io.readfile( p_f )
         if get_build_target() == tonumber( c ) then
             include( path .. "/platform_setup" )
+            return true
         end
     end
+    return false
 end
 
 function check_for_platform()
@@ -25,8 +28,13 @@ function check_for_platform()
     table.insert( available_platforms, "ps5" )
     table.insert( available_platforms, "win64" )
 
+    local success = false;
+
     for _, p in ipairs( available_platforms ) do
-        check_platform_id( core_dir .. p )
+        success = success or check_platform_id( core_dir .. p )
+    end
+    if not success then
+        include( fallback_dir .. "/core_fallback" )
     end
 end
 

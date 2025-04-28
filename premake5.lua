@@ -10,7 +10,7 @@ include "load_target"
 
 workspace "QWarp Playground"
     configurations { "Debug", "Release", "Final" }
-    platforms { get_platform() }
+    platforms { get_platforms() } -- Could allow me to use platforms as settings?
     startproject "Startup"
 
     defines {
@@ -121,7 +121,7 @@ project "Shaders"
 
 os.mkdir( "./build/fastgltf" )
 os.chdir( "./build/fastgltf" )
-print( "Building fastgltf files...\n" ) -- TODO: Move to build dir and run this, creates a fuckload of junk.
+print( "Building fastgltf files...\n" )
 os.execute( "cmake ../../external/fastgltf" )
 print( "\nBuild done." )
 os.chdir( "../.." )
