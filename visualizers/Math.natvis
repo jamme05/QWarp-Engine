@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name= "qw::cVector&lt;2,*&gt;">
+		<DisplayString>
+			{{ {x}, {y} }}
+		</DisplayString>
+		<Expand>
+			<Item Name="X">x</Item>
+			<Item Name="Y">y</Item>
+		</Expand>
+	</Type>
+	<Type Name= "qw::cVector&lt;3,*&gt;">
+		<DisplayString>
+			{{ {x}, {y}, {z} }}
+		</DisplayString>
+		<Expand>
+			<Item Name="X">x</Item>
+			<Item Name="Y">y</Item>
+			<Item Name="Z">z</Item>
+		</Expand>
+	</Type>
+	<Type Name= "qw::cVector&lt;4,*&gt;">
+		<DisplayString>
+			{{ {x}, {y}, {z}, {w} }}
+		</DisplayString>
+		<Expand>
+			<Item Name="X">x</Item>
+			<Item Name="Y">y</Item>
+			<Item Name="Z">z</Item>
+			<Item Name="W">w</Item>
+		</Expand>
+	</Type>
+
+</AutoVisualizer>

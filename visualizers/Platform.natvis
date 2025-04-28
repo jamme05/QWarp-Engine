@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name= "cPlatform">
+		<Intrinsic Name="size" Expression="m_max_users" />
+		<DisplayString>
+			{{ users={size()} }}
+		</DisplayString>
+		<Expand>
+			<Item Name="[active_user]">m_active_user</Item>
+			<ArrayItems>
+				<Size>size()</Size>
+				<ValuePointer>m_users</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+</AutoVisualizer>
