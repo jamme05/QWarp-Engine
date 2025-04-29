@@ -27,8 +27,10 @@
 #include "Graphics/cWindow_context.h"
 
 #include "Containers/allocator.h"
+#include "Misc/string_manipulation.h"
 
 #include "Runtime/cRuntimeClass.h"
+#include "Runtime/cRuntimeStruct.h"
 
 cApp::cApp( void )
 : iListener( qw::Input::eType::kAll, 10, true )
@@ -150,6 +152,14 @@ void cApp::create( void )
 	REGISTER_LISTENER( "Custom Event", &cApp::custom_event )
 
 	qw::Assets::cMaterial material{ "Test", *m_mesh_pair };
+
+	constexpr int arr1[]{ 1, 2, 3 };
+	constexpr qw::array t1{ arr1 };
+	constexpr qw::array t2{ 3, 2, 1 };
+	constexpr qw::array t3{ t2 };
+	//constexpr int* arr2 = t3;
+	constexpr auto t4 = t2 + t1;
+	constexpr auto v = qw::arr::concat< t1, { 1 } >::kValue;
 
 } // _create
 

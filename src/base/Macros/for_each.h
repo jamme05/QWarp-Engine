@@ -38,3 +38,11 @@ __VA_OPT__(EXPAND(COUNTER_ARG_FOR_EACH_HELPER(macro, arg, counter, __VA_ARGS__))
 macro(arg, a1, counter)                                                     \
 __VA_OPT__(COUNTER_ARG_FOR_EACH_AGAIN PARENS (macro, arg, counter + 1, __VA_ARGS__))
 #define COUNTER_ARG_FOR_EACH_AGAIN() COUNTER_ARG_FOR_EACH_HELPER
+
+#define FOR_EACH_FORWARD(macro, ...)                                    \
+__VA_OPT__(EXPAND(FOR_EACH_FORWARD_HELPER(macro, __VA_ARGS__)))
+#define FOR_EACH_FORWARD_HELPER(macro, a1, ...)                         \
+macro(a1,__VA_ARGS__)                                                     \
+__VA_OPT__(FOR_EACH_FORWARD_AGAIN PARENS (macro, __VA_ARGS__))
+#define FOR_EACH_FORWARD_AGAIN() FOR_EACH_FORWARD_HELPER
+

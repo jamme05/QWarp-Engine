@@ -33,6 +33,7 @@ filter { "configurations:Debug" }
         "DEBUG"
     }
     symbols "On"
+    optimize "Off"
 
 filter { "configurations:Release" }
     defines {

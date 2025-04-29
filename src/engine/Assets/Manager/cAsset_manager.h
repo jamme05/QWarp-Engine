@@ -51,14 +51,14 @@ namespace qw
 		} // createAsset
 
 		// Gets the first asset by name.
-		auto getAssetByName ( const hash< std::string >& _name_hash ) -> cShared_ptr< Asset_t >;
+		auto getAssetByName ( const str_hash& _name_hash ) -> cShared_ptr< Asset_t >;
 		// Gets all assets by name.
-		auto getAssetsByName( const hash< std::string >& _name_hash ) -> Assets::cAsset_List;
+		auto getAssetsByName( const str_hash& _name_hash ) -> Assets::cAsset_List;
 
 		// Gets the first asset by path.
-		auto getAssetByPath ( const hash< std::string >& _path_hash ) -> cShared_ptr< Asset_t >;
+		auto getAssetByPath ( const str_hash& _path_hash ) -> cShared_ptr< Asset_t >;
 		// Gets all assets made from the same file. ( Multiple in the case of packs )
-		auto getAssetsByPath( const hash< std::string >& _path_hash ) -> Assets::cAsset_List;
+		auto getAssetsByPath( const str_hash& _path_hash ) -> Assets::cAsset_List;
 
 		 /**
 		  * 
@@ -84,11 +84,11 @@ namespace qw
 	private:
 		typedef Assets::cAsset_List( *load_file_func_t )( const std::filesystem::path& );
 		typedef std::unordered_map< hash< Asset_id_t >, cShared_ptr< Asset_t > > id_to_asset_map_t;
-		typedef std::multimap< hash< std::string >, cShared_ptr< Asset_t > >     name_to_asset_map_t;
-		typedef std::unordered_map< hash< std::string >, load_file_func_t >      extension_loader_map_t;
+		typedef std::multimap< str_hash, cShared_ptr< Asset_t > >     name_to_asset_map_t;
+		typedef std::unordered_map< str_hash, load_file_func_t >      extension_loader_map_t;
 		typedef extension_loader_map_t::value_type extension_map_entry_t;
 
-#define EXTENSION_ENTRY( Ext, Func ) extension_map_entry_t{ hash< std::string >( Ext ), Func },
+#define EXTENSION_ENTRY( Ext, Func ) extension_map_entry_t{ str_hash( Ext ), Func },
 
 		static auto  loadGltfFile     ( const std::filesystem::path& _path ) -> Assets::cAsset_List;
 		static auto  handleGltfMesh   ( const fastgltf::Asset& _asset, fastgltf::Mesh&    _mesh    ) -> cShared_ptr< Asset_t >;

@@ -33,14 +33,14 @@ namespace qw
 		return nullptr;
 	} // getAsset
 
-	auto cAssetManager::getAssetByName( const hash< std::string >& _name_hash ) -> cShared_ptr< Asset_t >
+	auto cAssetManager::getAssetByName( const str_hash& _name_hash ) -> cShared_ptr< Asset_t >
 	{
 		if( const auto itr = m_asset_name_map.find( _name_hash ); itr != m_asset_name_map.end() )
 			return itr->second;
 
 		return nullptr;
 	} // getAssetByName
-	auto cAssetManager::getAssetsByName( const hash<std::string>& _name_hash ) -> Assets::cAsset_List
+	auto cAssetManager::getAssetsByName( const str_hash& _name_hash ) -> Assets::cAsset_List
 	{
 		Assets::cAsset_List assets;
 		const auto range = m_asset_name_map.equal_range( _name_hash );
@@ -50,7 +50,7 @@ namespace qw
 		return assets;
 	} // getAssetsByName
 
-	auto cAssetManager::getAssetByPath( const hash< std::string >& _path_hash ) -> cShared_ptr< Asset_t >
+	auto cAssetManager::getAssetByPath( const str_hash& _path_hash ) -> cShared_ptr< Asset_t >
 	{
 		if( const auto itr = m_asset_path_map.find( _path_hash ); itr != m_asset_path_map.end() )
 			return itr->second;
@@ -58,7 +58,7 @@ namespace qw
 		return nullptr;
 	} // getAssetByPath
 
-	auto cAssetManager::getAssetsByPath( const hash< std::string >& _path_hash ) -> Assets::cAsset_List
+	auto cAssetManager::getAssetsByPath( const str_hash& _path_hash ) -> Assets::cAsset_List
 	{
 		Assets::cAsset_List assets;
 		const auto range = m_asset_path_map.equal_range( _path_hash );
@@ -104,7 +104,7 @@ namespace qw
 
 	auto cAssetManager::loadFile( const std::filesystem::path& _path, const bool _reload ) -> Assets::cAsset_List
 	{
-		const auto extension_hash = hash< std::string >( _path.extension() );
+		const auto extension_hash = str_hash( _path.extension() );
 
 		const auto callback_pair = m_load_callbacks.find( extension_hash );
 
@@ -112,7 +112,7 @@ namespace qw
 			return {};
 
 		const auto absolute_path = getAbsolutePath( _path );
-		const auto path_hash     = hash< std::string >( absolute_path );
+		const auto path_hash     = str_hash( absolute_path );
 
 		auto assets = callback_pair->second( absolute_path );
 
@@ -183,7 +183,7 @@ namespace qw
 
 			for( const auto& attribute : primitive.attributes )
 			{
-				auto  name_hash = hash< std::string >( attribute.name );
+				auto  name_hash = str_hash( attribute.name );
 				auto& buffers   = mesh_asset->m_buffers;
 
 				auto& accessor  = _asset.accessors[ attribute.accessorIndex ];

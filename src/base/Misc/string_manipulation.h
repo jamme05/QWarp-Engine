@@ -6,6 +6,65 @@
 
 #pragma once
 
+#include <algorithm>
+#include <codecvt>
+#include <codecvt>
+
+// TODO: Move to its own space
+namespace qw
+{
+    template< class Ty, size_t Size >
+    struct array
+    {
+        typedef Ty value_type;
+        typedef Ty ( & arr_type )[ Size ];
+        constexpr static auto array_size = Size;
+
+        constexpr array( const Ty ( &_arr )[ Size ] )
+        {
+            std::copy_n( _arr, Size, value );
+        } // array
+
+        template< class... Ty2 >
+        requires ( std::conjunction_v< std::is_same< Ty, Ty2 >... > && !std::is_array_v< Ty > )
+        constexpr array( Ty2... _values )
+        : value{ _values... }
+        {
+        } // array
+
+        template< size_t Size2 >
+        constexpr array< Ty, Size + Size2 > operator+( const array< Ty, Size2 >& _other ) const
+        {
+            array< Ty, Size + Size2 > result;
+            std::copy_n( value, Size, result.value );
+            std::copy_n( _other.value, Size2, result.value + Size );
+            return result;
+        }
+
+        constexpr size_t size( void ) const { return array_size; }
+
+        Ty value[ Size ];
+    };
+
+    namespace arr
+    {
+        template< array First, array Second >
+        requires std::is_same_v< typename decltype( First )::value_type, typename decltype( Second )::value_type >
+        struct concat
+        {
+            constexpr static auto kValue = First + Second;
+            constexpr static auto kSize  = First.size() + Second.size();
+        };
+        template< array Array >
+        using type = typename decltype( Array )::value_type;
+    } // arr::
+    template< class Ty, class... Ty2 >
+    requires std::conjunction_v< std::is_same< Ty, Ty2 >... >
+    array( Ty, Ty2... ) -> array< Ty, 1 + sizeof...( Ty2 ) >;
+    template< class Ty, size_t Size >
+    array( const Ty ( & )[ Size ] ) -> array< Ty, Size >;
+} // qw::
+
 namespace qw::str
 {
     constexpr static int64_t get_single_size( const size_t _size, const int64_t _value )
@@ -17,7 +76,7 @@ namespace qw::str
 
         return _value;
     }
-    
+
     constexpr static std::pair< size_t, size_t > get_range( const size_t _length, const int64_t _start, const int64_t _end )
     {
         const auto start = get_single_size( _length, _start );
@@ -25,27 +84,19 @@ namespace qw::str
 
         if( start > end || start < 0 || end < 0 )
             return { 0, 0 };
-        
+
         return { start, static_cast< size_t >( end - start ) };
     } // get_index
 
-    template< size_t N >
-    struct StringLiteral
-    {
-        constexpr StringLiteral( const char ( &str )[ N ])
-        {
-            std::copy_n(str, N, value);
-        }
-        constexpr static auto Length = N;
+    template< class Ty, class Ty2 = Ty >
+    concept is_valid_string = std::is_same_v< Ty, char > && std::is_same_v< Ty, Ty2 >;
 
-        char value[ N ];
-    };
-
-    template< int64_t Start, int64_t End, StringLiteral Str >
+    template< int64_t Start, int64_t End, array Str >
+    requires is_valid_string< arr::type< Str > >
     struct substr_internal
     {
-        constexpr static size_t offset = get_range( Str.Length, Start, End ).first;
-        constexpr static size_t size   = get_range( Str.Length, Start, End ).second;
+        constexpr static size_t offset = get_range( Str.size(), Start, End ).first;
+        constexpr static size_t size   = get_range( Str.size(), Start, End ).second;
         constexpr substr_internal( void )
         {
             std::copy_n( Str.value + offset, size, value );
@@ -53,12 +104,13 @@ namespace qw::str
         char value[ size + 1 ]{};
     };
 
-    template< int64_t Start, StringLiteral Str, int64_t End = -1 >
+    template< int64_t Start, array Str, int64_t End = -1 >
+    requires is_valid_string< arr::type< Str > >
     struct substr
     {
         constexpr static substr_internal< Start, End, Str > compute{};
         constexpr static const char*   kValue = compute.value;
-        constexpr static StringLiteral kForward{ compute.value };
+        constexpr static array kForward{ compute.value };
     };
 
     template< size_t StrSize, size_t SearchSize >
@@ -70,67 +122,85 @@ namespace qw::str
         const auto str_size    = StrSize - ( _backwards ? 2 : 1 );
         constexpr auto search_size = SearchSize - 2;
 
-        const size_t end = _backwards ? 0 : str_size;
-
         int64_t found   = -1;
         size_t  counter = 0;
-        size_t  index   = _backwards ? search_size : 0;
-        size_t i = _backwards ? str_size : 0;
-        while( i != end )
-        {
-            if( _str[ i ] == _search[ index ] )
-            {
-                _backwards ? index-- : index++;
 
-                if( _backwards || found == -1 )
-                    found = static_cast< int64_t >( i );
-                if( counter++ == search_size )
-                    return found; // Found
-            }
-            else
+        if( _backwards )
+        {
+            size_t index = search_size;
+            for( int64_t i = static_cast< int64_t >( str_size ); i >= 0; --i )
             {
-                if( _backwards && found != -1 )
+                if( _str[ i ] == _search[ index ] )
                 {
-                    i = static_cast< size_t >( found );
+                    --index;
+                    found = i;
+                    if( counter++ == search_size )
+                        return found; // Found
                 }
                 else
-                    i -= index;
-                found   = -1;
-                counter = 0;
-                index   = _backwards ? search_size : 0;
+                {
+                    if( found != -1 )
+                    {
+                        i = found;
+                        found   = -1;
+                    }
+                    counter = 0;
+                    index   = search_size;
+                }
             }
-            if( _backwards )
-                --i;
-            else
-                ++i;
         }
-        
+        else
+        {
+            for( size_t i = 0; i < str_size; ++i )
+            {
+                if( _str[ i ] == _search[ counter ] )
+                {
+                    if( found == -1 )
+                        found = static_cast< int64_t >( i );
+                    if( counter++ == search_size )
+                        return found; // Found
+                }
+                else
+                {
+                    if( found != -1 )
+                    {
+                        i = static_cast< size_t >( found );
+                        found = -1;
+                    }
+                    counter = 0;
+                }
+            }
+        }
+
         return -1;
     } // find_index_of
 
-    template< StringLiteral Str, StringLiteral Find, bool Backwards = false >
+    template< array Str, array Find, bool Backwards = false >
+    requires is_valid_string< arr::type< Str >, arr::type< Find > >
     struct find
     {
         constexpr static auto kIndex = find_index_of( Str.value, Find.value, Backwards );
+        constexpr static bool kFound = kIndex != -1;
     };
 
-    template< StringLiteral Str, StringLiteral Other >
+    template< array Str, array Other >
+    requires is_valid_string< arr::type< Str >, arr::type< Other > >
     struct equals
     {
         constexpr static bool kValue = Str.Length == Other.Length && find_index_of( Str.value, Other.value ) == 0;
     };
 
-    template< StringLiteral Str, StringLiteral Find >
+    template< array Str, array Find >
+    requires is_valid_string< arr::type< Str >, arr::type< Find > >
     struct starts_with
     {
         constexpr static bool kValue = find_index_of( Str.value, Find.value ) == 0;
     };
 
-    template< StringLiteral Str, StringLiteral Find >
+    template< array Str, array Find >
+    requires is_valid_string< arr::type< Str >, arr::type< Find > >
     struct ends_with
     {
         constexpr static bool kValue = find_index_of( Str.value, Find.value, true ) == Str.Length - Find.Length;
     };
-
-    
 } // qw::str::

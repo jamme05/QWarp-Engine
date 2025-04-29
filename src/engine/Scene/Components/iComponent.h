@@ -10,7 +10,7 @@
 
 #include "Math/cMatrix4x4.h"
 #include "Math/cTransform.h"
-#include "Misc/cClass.h"
+#include "Runtime/cRuntimeClass.h"
 #include "Misc/Hashing.h"
 #include "Misc/Smart_ptrs.h"
 #include "Scene/Managers/cEventManager.h"
@@ -120,7 +120,7 @@ namespace qw::Object
 		hash_t             getType    ( void ) const final { return type_hash; }
 		const std::string& getTypeName( void ) const final { return type_name; }
 
-		static constexpr auto& getClass    ( void ){ return cClass< Ty >{}; } // TODO: Actual class
+		static constexpr auto& getClass    ( void ){ return cRuntimeClass< Ty >{}; } // TODO: Actual class
 		// Static variant of getType
 		static constexpr auto  getClassType( void ){ return type_hash; }
 		// Static variant of getTypeName

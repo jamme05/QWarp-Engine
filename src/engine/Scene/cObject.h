@@ -11,8 +11,8 @@
 #include "Components/iComponent.h"
 
 #include <ranges>
-#include "qw_std/vector.h"
-#include "qw_std/map.h"
+#include "Containers/vector.h"
+#include "Containers/map.h"
 
 #include "Components/cTransformComponent.h"
 
