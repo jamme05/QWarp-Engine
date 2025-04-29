@@ -26,7 +26,9 @@
 #include "Graphics/cUniforms.h"
 #include "Graphics/cWindow_context.h"
 
-#include "qw_std/allocator.h"
+#include "Containers/allocator.h"
+
+#include "Runtime/cRuntimeClass.h"
 
 cApp::cApp( void )
 : iListener( qw::Input::eType::kAll, 10, true )
@@ -59,21 +61,21 @@ bool cApp::onInput( const qw::Input::eType _type, const qw::Input::sEvent& _even
 } // onInput
 
 class test1;
-static constexpr auto target_test1 = qw::cClass< test1 >( "test1", __FILE__, __LINE__ );
+static constexpr auto target_test1 = qw::cRuntimeClass< test1 >( "test1", __FILE__, __LINE__ );
 class test1 : public qw::get_inherits_t<>
 {
 	CREATE_CLASS_IDENTIFIERS( target_test1 )
 };
 
 class test2;
-static constexpr auto target_test2 = qw::cClass< test2, test1 >( "test2", __FILE__, __LINE__ );
+static constexpr auto target_test2 = qw::cRuntimeClass< test2, test1 >( "test2", __FILE__, __LINE__ );
 class test2 : public qw::get_inherits_t< test1 >
 {
 	CREATE_CLASS_IDENTIFIERS( target_test2 )
 };
 
 class test3;
-static constexpr auto target_test3 = qw::cClass< test3 >( "test3", __FILE__, __LINE__ );
+static constexpr auto target_test3 = qw::cRuntimeClass< test3 >( "test3", __FILE__, __LINE__ );
 class test3 : public qw::get_inherits_t<>
 {
 	CREATE_CLASS_IDENTIFIERS( target_test3 )

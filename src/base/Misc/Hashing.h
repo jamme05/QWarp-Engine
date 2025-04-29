@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <string>
 
-#include "Types/types.h"
+#include "Math/Math.h"
 
 // FNV1a c++11 constexpr compile time hash functions, 32 and 64 bit
 // str should be a null terminated string literal, value should be left out
@@ -52,12 +52,12 @@ namespace Hashing
 
 	template< class Ty >
 	constexpr uint32_t fnv1a_32( const Ty& _in, const uint32_t _v = val_32_const ) noexcept {
-		return fnv1a_32s( static_cast< const char* >( &_in ), sizeof( _in ), _v );
+		return fnv1a_32s( reinterpret_cast< const char* >( &_in ), sizeof( _in ), _v );
 	}
 
 	template< class Ty >
 	constexpr uint64_t fnv1a_64( const Ty& _in, const uint64_t _v = val_64_const ) noexcept {
-		return fnv1a_64s( static_cast< const char* >( &_in ), sizeof( _in ), _v );
+		return fnv1a_64s( reinterpret_cast< const char* >( &_in ), sizeof( _in ), _v );
 	}
 
 #define HASH_REQUIREMENTS( Class ) \
@@ -105,18 +105,18 @@ constexpr bool   operator==( const Class& _other ) const { return m_hash == _oth
 
 #if !defined( FINAL )
 #define STRING_HASH_MEMORY \
-constexpr auto& get_string( void ){ return m_str; }; \
+constexpr auto& get_string( void ){ return m_raw; }; \
 private: \
-std::string m_str; \
+const char* m_raw = nullptr; \
 public:
 // Used with const char* that won't move
-#define SAVE_STRING( Str ) m_str = Str;
+#define SAVE_STRING( Str ) m_raw = Str;
 // Used with std::string, which can move
-#define COPY_STRING( Str, Length ) m_str = std::string( Str, Length );
+#define COPY_STRING( Str, Length ) m_raw = Str;
 // To allow copying over the saved string.
 #define STRING_HASH_REQUIREMENTS( Class ) \
-constexpr Class( const Class& _other ) : Hashing::iHashed( _other.m_hash ), m_str( _other.m_str ){}; \
-constexpr Class( Class && _other ) noexcept : Hashing::iHashed( _other.m_hash ), m_str( _other.m_str ){} \
+constexpr Class( const Class& _other ) : Hashing::iHashed( _other.m_hash ){}; \
+constexpr Class( Class && _other ) noexcept : Hashing::iHashed( _other.m_hash ){} \
 ~Class( void ) = default; \
 constexpr Class & operator=( const Class& _other ){ m_hash = _other.m_hash; return *this; } \
 constexpr Class & operator=( Class && _other ) noexcept { m_hash = _other.m_hash; return *this; } \
@@ -131,25 +131,6 @@ constexpr bool   operator==( const Class & _other ) const { return m_hash == _ot
 
 namespace qw
 {
-	struct StringLiteralBase
-	{
-		constexpr StringLiteralBase( const char* const _s ) : raw_str( _s ){}
-		const char* raw_str;
-	};
-
-	template< size_t Size >
-	struct StringLiteral : StringLiteralBase
-	{
-		constexpr StringLiteral( const char( &_str )[ Size ] )
-		: StringLiteralBase( str )
-		{
-			for( size_t i = 0; i < Size; ++i )
-				str[ i ] = _str[ i ];
-		}
-
-		char str[ Size ];
-	};
-
 	template< class Ty >
 		class hash : public Hashing::iHashed
 	{
@@ -160,7 +141,7 @@ namespace qw
 
 	// TODO: Make name class like unreal
 	template<>
-	class hash< std::string > : public Hashing::iHashed
+	class hash< char > : public Hashing::iHashed
 	{
 	public:
 		constexpr hash( const std::string& _to_hash )
@@ -172,7 +153,7 @@ namespace qw
 		hash( const std::filesystem::path& _to_hash )
 		: iHashed( Hashing::fnv1a_64( _to_hash.c_str() ) )
 		{
-			auto str = _to_hash.string();
+			const auto str = _to_hash.string();
 			COPY_STRING( str.c_str(), str.size() )
 		} // hash
 
@@ -185,7 +166,7 @@ namespace qw
 		constexpr hash( const char* _to_hash )
 		: iHashed( Hashing::fnv1a_64( _to_hash ) )
 		{
-			SAVE_STRING( _to_hash )
+			COPY_STRING( _to_hash, 128 )
 		}
 
 		constexpr hash( const char* _to_hash, const size_t _c )
@@ -198,7 +179,9 @@ namespace qw
 		STRING_HASH_MEMORY
 	};
 
-	constexpr static hash< std::string > string_hash_none{ "" };
+	typedef hash< char > str_hash;
+
+	constexpr static str_hash string_hash_none{ "" };
 
 	template<>
 	class hash< uint32_t > : public Hashing::iHashed

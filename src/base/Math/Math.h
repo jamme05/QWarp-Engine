@@ -166,7 +166,7 @@ namespace qw
 
 		template< class T >
 		requires enable_artimetic_c< T >
-		T	degToRad( const T _val )
+		constexpr T	degToRad( const T _val )
 			{
 				typedef promote_to_float_t< T > type;
 				return static_cast< T >( kDegToRad< type > * type( _val ) );
@@ -174,10 +174,24 @@ namespace qw
 
 		template< class T >
 		requires enable_artimetic_c< T >
-		T	radToDeg( const T _val )
+		constexpr T	radToDeg( const T _val )
 			{
 				typedef promote_to_float_t< T > type;
 				return static_cast< T >( kRadToDeg< type > * type( _val ) );
+			}
+
+		template< class T >
+		requires enable_artimetic_c< T >
+		constexpr T	min( const T _a, const T _b )
+			{
+				return _a < _b ? _a : _b;
+			}
+
+		template< class T >
+		requires enable_artimetic_c< T >
+		constexpr T	max( const T _a, const T _b )
+			{
+				return _a > _b ? _a : _b;
 			}
 
 	} // Math::

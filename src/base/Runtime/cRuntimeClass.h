@@ -6,15 +6,17 @@
 
 #pragma once
 
-#include "Hashing.h"
+#include "Misc/Hashing.h"
 
 #include "Macros/manipulation.h"
 
+#include "types.h"
+
 namespace qw
 {
-	class iClass;
+	class iRuntimeClass;
 	template<>
-	class hash< iClass > : public Hashing::iHashed
+	class hash< iRuntimeClass > : public Hashing::iHashed
 	{
 	public:
 	constexpr hash( const char* _str, const uint64_t _val )
@@ -24,12 +26,12 @@ namespace qw
 	HASH_REQUIREMENTS( hash )
 	};
 
-	class iRuntimeClass;
+	class iClass;
 
-	class iClass
+	class iRuntimeClass
 	{
 	public:
-		constexpr iClass( const char* _name, const char* _file, const uint32_t _line = 0, const uint64_t& _parent_hash = Hashing::val_64_const )
+		constexpr iRuntimeClass( const char* _name, const char* _file, const uint32_t _line = 0, const uint64_t& _parent_hash = Hashing::val_64_const )
 		: m_hash( _name, _parent_hash )
 		, m_raw_name( _name )
 		, m_file_path( _file )
@@ -43,19 +45,19 @@ namespace qw
 		auto            getName    ( void ) const { return std::string( m_raw_name ); }
 		auto            getLine    ( void ) const { return m_line; }
 
-		virtual constexpr bool isDerivedFrom( const iClass& _base    ) const { return false; } // Has to be set so iClass isn't a pure virtual
-		virtual constexpr bool isBaseOf     ( const iClass& _derived ) const { return false; } // Has to be set so iClass isn't a pure virtual
+		virtual constexpr bool isDerivedFrom( const iRuntimeClass& _base    ) const { return false; } // Has to be set so iClass isn't a pure virtual
+		virtual constexpr bool isBaseOf     ( const iRuntimeClass& _derived ) const { return false; } // Has to be set so iClass isn't a pure virtual
 
-		constexpr bool operator==( const iClass& _right ) const { return m_hash == _right.m_hash; }
+		constexpr bool operator==( const iRuntimeClass& _right ) const { return m_hash == _right.m_hash; }
 
 	private:
-		hash< iClass > m_hash;
+		hash< iRuntimeClass > m_hash;
 		const char*    m_raw_name;
 		const char*    m_file_path;
 		size_t         m_line;
 	};
 
-	constexpr static iClass kInvalidClass{ "Invalid", __FILE__ };
+	constexpr static iRuntimeClass kInvalidClass{ "Invalid", __FILE__ };
 
 	template< bool Select, class Ty, class Ty2 >
 	struct select_class_type{};
@@ -111,13 +113,13 @@ namespace qw
 	public:
 		static constexpr bool has_value = sizeof( decltype( test< Ty >( 0 ) ) ) == 1;
 	private:
-		typedef typename select_class_type< has_value, Ty, iClass >::type pre_type;
+		typedef typename select_class_type< has_value, Ty, iRuntimeClass >::type pre_type;
 	public:
-		static constexpr bool is_valid  = std::is_base_of_v< iClass, pre_type >;
-		static constexpr bool is_base   = std::is_same_v< pre_type, iClass >;
+		static constexpr bool is_valid  = std::is_base_of_v< iRuntimeClass, pre_type >;
+		static constexpr bool is_base   = std::is_same_v< pre_type, iRuntimeClass >;
 		static constexpr bool uses_own  = is_valid && !is_base;
-		typedef typename select_class_type< uses_own, Ty, iClass >::type   class_type;
-		typedef typename select_type< uses_own, Ty, iRuntimeClass >::type inherits_type;
+		typedef typename select_class_type< uses_own, Ty, iRuntimeClass >::type   class_type;
+		typedef typename select_type< uses_own, Ty, iClass >::type inherits_type;
 	};
 
 	template< class Ty >
@@ -125,12 +127,12 @@ namespace qw
 
 	template< class Ty >
 	using get_parent_class_t = typename get_parent_class< Ty >::class_type;
-	template< class Ty = iRuntimeClass >
+	template< class Ty = iClass >
 	using get_inherits_t     = typename get_parent_class< Ty >::inherits_type;
 
-	template< class Ty, class Pa = iClass, const get_parent_class_t< Pa >& Parent = get_class_ref< Pa >, bool ForceShared = true >
-	requires std::is_base_of_v< iClass, get_parent_class_t< Pa > >
-	class cClass : public get_parent_class_t< Pa >
+	template< class Ty, class Pa = iRuntimeClass, const get_parent_class_t< Pa >& Parent = get_class_ref< Pa >, bool ForceShared = true >
+	requires std::is_base_of_v< iRuntimeClass, get_parent_class_t< Pa > >
+	class cRuntimeClass : public get_parent_class_t< Pa >
 	{
 	public:
 		typedef Ty                       value_type;
@@ -139,24 +141,24 @@ namespace qw
 		// TODO: Move
 		typedef typename get_parent_class< Pa >::inherits_type inherits_type;
 
-		constexpr cClass( const char* _name, const char* _file = nullptr, const uint32_t _line = 0, const uint64_t& _parent_hash = Parent.getType().getHash() )
+		constexpr cRuntimeClass( const char* _name, const char* _file = nullptr, const uint32_t _line = 0, const uint64_t& _parent_hash = Parent.getType().getHash() )
 		: parent_type( _name, _file, _line, _parent_hash )
 		{} // cClass
 
 		// Use std::is_base_of / std::is_base_of_v instead of this in case both types are known.
-		constexpr bool isDerivedFrom( const iClass& _base ) const override
+		constexpr bool isDerivedFrom( const iRuntimeClass& _base ) const override
 		{
 			if( *this == _base )
 				return true;
 
 			// The placeholder parent will always be of the type iClass
-			if constexpr( std::is_same_v< iClass, parent_type > )
+			if constexpr( std::is_same_v< iRuntimeClass, parent_type > )
 				return false;
 			else
 				return Parent.isDerivedFrom( _base );
 		} // isDerivedFrom
 
-		constexpr bool isBaseOf( const iClass& _derived ) const override
+		constexpr bool isBaseOf( const iRuntimeClass& _derived ) const override
 		{
 			return _derived.isDerivedFrom( *this );
 		} // isBaseOf
@@ -166,14 +168,23 @@ namespace qw
 		Ty* create( Args&&... ){ return nullptr; } // TODO: Create function
 	};
 
-	class iRuntimeClass // Switch names between iClass and iRuntrimeClass?
+	class iClass // Switch names between iClass and iRuntrimeClass?
 	{
 	public:
-		iRuntimeClass( void ) = default;
-		virtual ~iRuntimeClass( void ) = default;
-		virtual constexpr const iClass&         getClass    ( void ) const = 0;
-		virtual constexpr const hash< iClass >& getClassType( void ) = 0;
+		iClass( void ) = default;
+		virtual ~iClass( void ) = default;
+		virtual constexpr const iRuntimeClass&         getClass    ( void ) const = 0;
+		virtual constexpr const hash< iRuntimeClass >& getClassType( void ) = 0;
 		virtual constexpr const std::string     getClassName( void ) = 0;
+	};
+
+	template< class Ty >
+	requires std::is_base_of_v< iClass, Ty >
+	struct get_type_id< Ty >
+	{
+		constexpr static auto&     kClass  = Ty::getStaticClass();
+		constexpr static type_hash kId     = kClass.getType().getHash();
+		constexpr static char      kName[] = kClass.getRawName();
 	};
 
 } // qw::
@@ -195,7 +206,7 @@ namespace qw
 
 #define CREATE_CLASS_BODY( Class ) CREATE_CLASS_IDENTIFIERS( runtime_class_ ## Class )
 
-#define CREATE_RUNTIME_CLASS_VALUE( Class, Name, ... ) static constexpr auto CONCAT( runtime_class_, Name ) = qw::cClass< Class __VA_OPT__(,) FIRST( __VA_ARGS__ ) >( #Name, __FILE__, __LINE__ );
+#define CREATE_RUNTIME_CLASS_VALUE( Class, Name, ... ) static constexpr auto CONCAT( runtime_class_, Name ) = qw::cRuntimeClass< Class __VA_OPT__(,) FIRST( __VA_ARGS__ ) >( #Name, __FILE__, __LINE__ );
 
 // Requires you to manually add CREATE_CLASS_IDENTIFIERS inside the body. But gives greater freedom. First inheritance will always have to be public. Unable to function with templated classes.
 #define GENERATE_CLASS( Class, ... ) \

@@ -61,7 +61,7 @@ project "Framework"
 
     links { "Engine", "Core" }
     
-    includedirs { "src/engine", "src/framework", platform_src(), "external/fastgltf/include", "src/includes" }
+    includedirs { "src/engine", "src/framework", platform_src(), "external/fastgltf/include", "src/base" }
 
 project "Startup"
     kind "WindowedApp"
@@ -73,7 +73,7 @@ project "Startup"
 
     files { "src/startup/main.cpp" }
 
-    includedirs { "src/engine", "src/framework", platform_src(), "external/fastgltf/include", "external/lodepng", "src/includes" }
+    includedirs { "src/engine", "src/framework", platform_src(), "external/fastgltf/include", "external/lodepng", "src/base" }
 
 group "QWarp"
 
@@ -87,17 +87,17 @@ project "Engine"
 
     files { "src/engine/**.hpp", "src/engine/**.cpp", "src/engine/**.h" }
 
-    includedirs { "src/engine", platform_src(), "external/fastgltf/include", "external/lodepng", "src/includes" }
+    includedirs { "src/engine", platform_src(), "external/fastgltf/include", "external/lodepng", "src/base" }
 
 
-project "Includes"
+project "Base"
     kind "None"
-    location "build/includes"
+    location "build/base"
     language "C++"
 
-    files( "src/includes/**" )
+    files( "src/base/**" )
 
-    includedirs { platform_src(), "src/engine", "src/includes" }
+    includedirs { platform_src(), "src/engine", "src/base" }
 
 project "Core"
     kind "StaticLib"
@@ -109,7 +109,7 @@ project "Core"
 
     files( get_source_paths() )
 
-    includedirs { platform_src(), "external/fastgltf/include", "external/lodepng", "src/includes" }
+    includedirs { platform_src(), "external/fastgltf/include", "external/lodepng", "src/base" } 
 
 project "Shaders"
     kind "StaticLib"
