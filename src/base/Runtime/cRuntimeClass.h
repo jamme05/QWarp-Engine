@@ -194,8 +194,8 @@ namespace qw
 // Required to make a runtime class functional.
 #define CREATE_CLASS_IDENTIFIERS( RuntimeClass ) public: \
 	typedef decltype( RuntimeClass ) class_type;           \
-	constexpr const qw::iClass&             getClass    ( void ) const override { return m_class;     } \
-	constexpr const qw::hash< qw::iClass >& getClassType( void ) override { return m_class.getType(); } \
+	constexpr const qw::iRuntimeClass&             getClass    ( void ) const override { return m_class;     } \
+	constexpr const qw::hash< qw::iRuntimeClass >& getClassType( void ) override { return m_class.getType(); } \
 	const std::string                       getClassName( void ) override { return m_class.getName(); } \
 	static constexpr auto&  getStaticClass    ( void ){ return RuntimeClass;           } \
 	static constexpr auto&  getStaticClassType( void ){ return RuntimeClass .getType(); } \

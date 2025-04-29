@@ -8,8 +8,8 @@
 
 #include <functional>
 
-#include "qw_std/map.h"
-#include "qw_std/vector.h"
+#include "Containers/map.h"
+#include "Containers/vector.h"
 
 #include <Misc/Hashing.h>
 #include "Misc/cSingleton.h"
@@ -53,7 +53,7 @@ namespace qw
 		//{
 		//} // hash
 
-		constexpr hash( const hash< std::string >& _other )
+		constexpr hash( const str_hash& _other )
 		: iHashed( _other.getHash() )
 		{
 		} // hash
