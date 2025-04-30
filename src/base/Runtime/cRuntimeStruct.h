@@ -25,10 +25,9 @@ BUILD_STRUCT_BEGIN( Name ) \
 BUILD_STRUCT_MEMBERS( __VA_ARGS__ ) \
 };
 
-#define REGISTER_STRUCT_TYPE( Type, Types, Name ) \
-template<> struct qw::get_type_id< Type >{ \
-constexpr static qw::type_hash kId = qw::args_hash< Types >::kHash; \
-constexpr static char kName[] = Name; };
+#define GET_ARGS_HASH( ... ) qw::args_hash< false, __VA_ARGS__ >::kHash
+
+#define REGISTER_STRUCT_TYPE( Type, Types, Name ) REGISTER_TYPE_DIRECT( Type, Name, = GET_ARGS_HASH, Types )
 
 #define BUILD_TYPE_INFO( Name, ... ) REGISTER_STRUCT_TYPE( Name, GET_MEMBER_TYPES( __VA_ARGS__ ), #Name )
 

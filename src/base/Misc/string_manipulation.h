@@ -35,16 +35,47 @@ namespace qw
         template< size_t Size2 >
         constexpr array< Ty, Size + Size2 > operator+( const array< Ty, Size2 >& _other ) const
         {
-            array< Ty, Size + Size2 > result;
-            std::copy_n( value, Size, result.value );
-            std::copy_n( _other.value, Size2, result.value + Size );
-            return result;
+            if constexpr( Size2 == 0 )
+            {
+                return *this;
+            }
+            else
+            {
+                array< Ty, Size + Size2 > result;
+                std::copy_n( value, Size, result.value );
+                std::copy_n( _other.value, Size2, result.value + Size );
+                return result;
+            }
         }
+
+        constexpr Ty& operator[]( const size_t _index ) const { return value[ _index ]; }
 
         constexpr size_t size( void ) const { return array_size; }
 
         Ty value[ Size ];
     };
+
+    template< class Ty >
+    struct array< Ty, 0 >
+    {
+        typedef Ty value_type;
+        constexpr static auto array_size = 0;
+
+        constexpr array( void )
+        {
+        } // array
+
+        template< size_t Size2 >
+        constexpr array< Ty, Size2 > operator+( const array< Ty, Size2 >& _other ) const
+        {
+            array< Ty, Size2 > result;
+            std::copy_n( _other.value, Size2, result.value );
+            return result;
+        }
+
+        constexpr size_t size( void ) const { return array_size; }
+    };
+
 
     namespace arr
     {

@@ -161,6 +161,9 @@ void cApp::create( void )
 	constexpr auto t4 = t2 + t1;
 	constexpr auto v = qw::arr::concat< t1, { 1 } >::kValue;
 
+	constexpr auto v2 = qw::args_hash< true, void >::kTypes;
+	constexpr auto v3 = qw::validate_args( v2, true );
+
 } // _create
 
 void cApp::custom_event( void )
