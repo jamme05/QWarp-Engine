@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "Memory/Tracker/cTracker.h"
+#include "Memory/Memory.h"
 
 namespace qw
 {
@@ -40,8 +40,8 @@ namespace qw
 		allocator( const allocator< Ty2 >& ) noexcept { }
 		~allocator( void ) noexcept = default;
 
-		auto& operator=( const allocator& ) noexcept { return *this; };
-		auto& operator=( allocator&& ) noexcept { return *this; };
+		auto& operator=( const allocator& ) noexcept { return *this; }
+		auto& operator=( allocator&& ) noexcept { return *this; }
 		template< class Ty2 >
 		auto& operator=( const allocator< Ty2 >& ) noexcept { return *this; }
 		template< class Ty2 >
@@ -64,7 +64,7 @@ namespace qw
 
 		size_type max_size( void ) const
 		{
-			return Memory::Tracker::max_heap_size() / sizeof( Ty );
+			return MAX_HEAP_SIZE / sizeof( Ty );
 		} // max_size
 
 	};

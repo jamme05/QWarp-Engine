@@ -14,12 +14,13 @@ workspace "QWarp Playground"
     startproject "Startup"
 
     defines {
-        "LODEPNG_NO_COMPILE_ALLOCATORS"
+        "LODEPNG_NO_COMPILE_ALLOCATORS",
+        "QW_CORE_ID=" .. tostring( get_core_id() )
     }
 
     files { "visualizers/*.natvis" }
 
-    SetupFilters()
+    setup_workspace()
 
 filter { "platforms:x64" }
     defines {

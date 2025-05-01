@@ -4,8 +4,12 @@ local src_dir  = "../src/base/"
 
 print( "WARNIG: QWarp has loaded the fallback build tool. In this environment compiling won't work." )
 
-function SetupFilters()
+function setup_workspace()
     cppdialect "c++20"
+end
+
+function get_core_id()
+    return -1
 end
 
 function platform_src()
