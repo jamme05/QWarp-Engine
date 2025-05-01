@@ -180,7 +180,7 @@ namespace qw
 
 	template< class Ty >
 	requires std::is_base_of_v< iClass, Ty >
-	struct get_type_id< Ty >
+	struct get_type_info< Ty >
 	{
 		constexpr static auto&     kClass  = Ty::getStaticClass();
 		constexpr static type_hash kId     = kClass.getType().getHash();

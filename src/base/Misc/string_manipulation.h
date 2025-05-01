@@ -7,8 +7,7 @@
 #pragma once
 
 #include <algorithm>
-#include <codecvt>
-#include <codecvt>
+#include <utility>
 
 // TODO: Move to its own space
 namespace qw
@@ -25,10 +24,10 @@ namespace qw
             std::copy_n( _arr, Size, value );
         } // array
 
-        template< class... Ty2 >
-        requires ( std::conjunction_v< std::is_same< Ty, Ty2 >... > && !std::is_array_v< Ty > )
-        constexpr array( Ty2... _values )
-        : value{ _values... }
+        template< class... Args >
+        requires ( std::conjunction_v< std::is_same< Ty, Args >... > && !std::is_array_v< Ty > )
+        constexpr array( Args... _values )
+        : value{ std::move( _values )... }
         {
         } // array
 
@@ -48,7 +47,14 @@ namespace qw
             }
         }
 
-        constexpr Ty& operator[]( const size_t _index ) const { return value[ _index ]; }
+        constexpr auto begin( void ) const { return get(); }
+        constexpr auto begin( void )       { return get(); }
+        constexpr auto end  ( void ) const { return get() + Size; }
+        constexpr auto end  ( void )       { return get() + Size; }
+
+        constexpr auto get  ( void ) const { return value; }
+
+        constexpr auto& operator[]( const size_t _index ) const { return value[ _index ]; }
 
         constexpr size_t size( void ) const { return array_size; }
 
@@ -61,9 +67,14 @@ namespace qw
         typedef Ty value_type;
         constexpr static auto array_size = 0;
 
-        constexpr array( void )
-        {
-        } // array
+        constexpr array( void ) = default; // array
+
+        constexpr auto begin( void ) const { return get(); }
+        constexpr auto begin( void )       { return get(); }
+        constexpr auto end  ( void ) const { return get(); }
+        constexpr auto end  ( void )       { return get(); }
+
+        constexpr auto get  ( void ) const { return nullptr; }
 
         template< size_t Size2 >
         constexpr array< Ty, Size2 > operator+( const array< Ty, Size2 >& _other ) const
@@ -94,6 +105,9 @@ namespace qw
     array( Ty, Ty2... ) -> array< Ty, 1 + sizeof...( Ty2 ) >;
     template< class Ty, size_t Size >
     array( const Ty ( & )[ Size ] ) -> array< Ty, Size >;
+
+    template< size_t Size >
+    using string = array< char, Size >;
 } // qw::
 
 namespace qw::str
@@ -232,6 +246,6 @@ namespace qw::str
     requires is_valid_string< arr::type< Str >, arr::type< Find > >
     struct ends_with
     {
-        constexpr static bool kValue = find_index_of( Str.value, Find.value, true ) == Str.Length - Find.Length;
+        constexpr static bool kValue = find_index_of( Str.value, Find.value, true ) == Str.size() - Find.size();
     };
 } // qw::str::

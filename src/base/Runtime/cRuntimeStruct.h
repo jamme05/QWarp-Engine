@@ -25,11 +25,13 @@ BUILD_STRUCT_BEGIN( Name ) \
 BUILD_STRUCT_MEMBERS( __VA_ARGS__ ) \
 };
 
-#define GET_ARGS_HASH( ... ) qw::args_hash< false, __VA_ARGS__ >::kHash
+#define GET_ARGS_HASH( ... ) qw::struct_hash< __VA_ARGS__ >::kHash
 
-#define REGISTER_STRUCT_TYPE( Type, Types, Name ) REGISTER_TYPE_DIRECT( Type, Name, = GET_ARGS_HASH, Types )
+#define REGISTER_STRUCT( Type, Types, Name ) \
+	MAKE_TYPE_INFO_DIRECT( Type, Name, = GET_ARGS_HASH, Types ) \
+	REGISTER_TYPE_INTERNAL( Type )
 
-#define BUILD_TYPE_INFO( Name, ... ) REGISTER_STRUCT_TYPE( Name, GET_MEMBER_TYPES( __VA_ARGS__ ), #Name )
+#define BUILD_TYPE_INFO( Name, ... ) REGISTER_STRUCT( Name, GET_MEMBER_TYPES( __VA_ARGS__ ), #Name )
 
 #define MAKE_STRUCT( Name, ... ) \
 BUILD_STRUCT_BODY( Name, __VA_ARGS__ ) \
@@ -41,7 +43,3 @@ MAKE_STRUCT( TestStruct,
 	M( int32_t, Count2 ),
 	M( int32_t, Count3 ),
 )
-struct TestStruct2 { int32_t Count ; int32_t Count2 ; int32_t Count3 ; };
-template<> struct qw::get_type_id< TestStruct2 >{
-constexpr static type_hash kId = args_hash< int32_t , int32_t , int32_t >::kHash;
-constexpr static char kName[] = "TestStruct2"; };
