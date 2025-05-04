@@ -16,7 +16,6 @@
 
 #include "Macros/enum_builder.h"
 
-
 namespace qw
 {
     template<>
@@ -40,10 +39,11 @@ namespace qw
     };
 
     typedef hash< void > type_hash;
+    // TODO: Create a file for just the type hash.
 
     constexpr static type_hash kInvalid_Id = 0;
 
-    struct type_info
+    struct sType_Info
     {
         MAKE_ENUM( ENUMCLASS( eType ),
             E( kStandard, "Standard" ),
@@ -59,38 +59,52 @@ namespace qw
         const char* raw_name;
         bool        is_ptr = false;
         bool        is_ref = false;
-        constexpr type_info as_ptr( void ) const
+        constexpr sType_Info as_ptr( void ) const
         {
             return { .hash = hash, .size = size, .name = name, .raw_name = raw_name, .is_ptr = true };
         } // as_ptr
-        constexpr type_info as_ref( void ) const
+        constexpr sType_Info as_ref( void ) const
         {
             return { .hash = hash, .size = size, .name = name, .raw_name = raw_name, .is_ref = true };
         } // as_ref
-        constexpr std::pair< type_hash, type_info > pair( void ) const
+        constexpr std::pair< type_hash, sType_Info > pair( void ) const
         {
             return { hash, *this };
         } // pair
     };
 
-    struct struct_type_info : type_info
+    // TODO: Move individual types to their own spaces.
+    namespace runtime_struct
     {
-        //map_ref< str_hash,  >
+        struct sMemberInfo
+        {
+            type_hash   type;
+            str_hash    name_hash; // Original name shouldn't be required to be accessed?
+            const char* display_name;
+            size_t      size;
+            size_t      offset;
+        };
+    } // runtime_struct::
+
+    struct sStruct_Type_Info : public sType_Info
+    {
+        const char* tmp;
+        //map_ref< str_hash, runtime_struct::sMemberInfo, std::less< str_hash > > members;
     };
 
-    struct enum_type_info : type_info
+    struct enum_type_info : sType_Info
     {
         
     };
 
-    typedef std::pair< type_hash, type_info > type_pair_t;
-    extern const unordered_map< type_hash, type_info > type_map;
+    typedef std::pair< type_hash, sType_Info > type_pair_t;
+    extern const unordered_map< type_hash, sType_Info > type_map;
 
     template< class Ty >
     struct get_type_info
     {
         // static_assert( false, "Invalid Type" );
-        constexpr static type_info kInfo = {
+        constexpr static sType_Info kInfo = {
             .hash = kInvalid_Id,
             .size = 0,
             .name = "Invalid",
@@ -103,14 +117,14 @@ namespace qw
     struct get_type_info< Ty* > : get_type_info< Ty >
     {
         typedef get_type_info< Ty > raw_t;
-        constexpr static type_info kInfo = raw_t::kInfo.as_ptr();
+        constexpr static sType_Info kInfo = raw_t::kInfo.as_ptr();
     };
     template< class Ty >
     requires get_type_info< Ty >::kValid
     struct get_type_info< Ty& > : get_type_info< Ty >
     {
         typedef get_type_info< Ty > raw_t;
-        constexpr static type_info kInfo = raw_t::kInfo.as_ref();
+        constexpr static sType_Info kInfo = raw_t::kInfo.as_ref();
     };
     template< class Ty >
     requires get_type_info< Ty >::kValid
@@ -188,7 +202,7 @@ namespace qw
 // Pre-declare void type.
 template<> struct qw::get_type_info< void >
 {
-    constexpr static type_info kInfo   = { .hash = { "Void" }, .size = 0, .name = "Void", .raw_name = "void" };
+    constexpr static sType_Info kInfo   = { .hash = { "Void" }, .size = 0, .name = "Void", .raw_name = "void" };
     constexpr static bool      kValid = true;
 }; // Void my beloved
 
@@ -276,7 +290,7 @@ REGISTER_TYPE_INTERNAL( void )
 
 #define MAKE_TYPE_INFO_DIRECT( Type, Name, HashMacro, ... ) \
 template<> struct qw::get_type_info< Type >{ \
-constexpr static type_info kInfo   = { .hash HashMacro( __VA_ARGS__ ) , .size = sizeof( Type ), .name = Name, .raw_name = #Type }; \
+constexpr static sType_Info kInfo   = { .hash HashMacro( __VA_ARGS__ ) , .size = sizeof( Type ), .name = Name, .raw_name = #Type }; \
 constexpr static bool      kValid = true; \
 };
 

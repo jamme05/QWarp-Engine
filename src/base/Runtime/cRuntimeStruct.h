@@ -8,17 +8,7 @@
 
 #include <Macros/for_each.h>
 #include <Macros/manipulation.h>
-
-namespace qw::runtime_struct
-{
-	struct sMemberInfo
-	{
-		type_hash   type;
-		const char* name;
-		size_t      size;
-		size_t      offset;
-	};
-} // qw::runtime_struct
+#include <Runtime/types.h>
 
 #define GET_MEMBER_M( Type, Name, ... ) Type Name ;
 #define GET_TYPE_M( Type, Name, ... ) Type
@@ -38,6 +28,13 @@ BUILD_STRUCT_MEMBERS( __VA_ARGS__ ) \
 
 #define GET_ARGS_HASH( ... ) qw::struct_hash< __VA_ARGS__ >::kHash
 
+#define MAKE_STRUCT_TYPE_INFO( Type, MembersHash, Members ) \
+template<> struct qw::get_type_info< Type >{ \
+	constexpr static sStruct_Type_Info kInfo = { .hash HashMacro( __VA_ARGS__ ) , .size = sizeof( Type ), .name = Name, .raw_name = #Type }; \
+	constexpr static bool      kValid = true; \
+	};
+
+
 #define REGISTER_STRUCT( Type, Types, Name ) \
 	MAKE_TYPE_INFO_DIRECT( Type, Name, = GET_ARGS_HASH, Types ) \
 	REGISTER_TYPE_INTERNAL( Type )
@@ -55,3 +52,5 @@ MAKE_STRUCT( TestStruct,
 	M( int8_t, Count4 ),
 	M( int32_t, Count5 ),
 )
+
+//MAKE_TYPE_INFO_DIRECT( Type, Name, = GET_ARGS_HASH, Types )
