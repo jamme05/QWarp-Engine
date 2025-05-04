@@ -6,18 +6,15 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "Misc/Hashing.h"
 #include "Misc/string_manipulation.h"
+#include "Containers/const_map.h"
 
 #include <Macros/manipulation.h>
 
 #include <Containers/map.h>
 
-#if defined( __INTELLISENSE__ ) || defined( __RESHARPER__ )
-#define IN_EDITOR 1
-#endif // __INTELLISENSE__ || __RESHARPER__
+#include "Macros/enum_builder.h"
 
 
 namespace qw
@@ -48,6 +45,14 @@ namespace qw
 
     struct type_info
     {
+        MAKE_ENUM( ENUMCLASS( eType ),
+            E( kStandard, "Standard" ),
+            E( kEnum, "Enum" ),
+            E( kArray, "Array" ),
+            E( kStruct, "Struct" ),
+            E( kClass, "Class" )
+        );
+
         type_hash   hash;
         size_t      size;
         const char* name;
@@ -56,16 +61,26 @@ namespace qw
         bool        is_ref = false;
         constexpr type_info as_ptr( void ) const
         {
-            return { .hash = hash, .size = size, .name = name, .is_ptr = true };
+            return { .hash = hash, .size = size, .name = name, .raw_name = raw_name, .is_ptr = true };
         } // as_ptr
         constexpr type_info as_ref( void ) const
         {
-            return { .hash = hash, .size = size, .name = name, .is_ref = true };
+            return { .hash = hash, .size = size, .name = name, .raw_name = raw_name, .is_ref = true };
         } // as_ref
         constexpr std::pair< type_hash, type_info > pair( void ) const
         {
             return { hash, *this };
         } // pair
+    };
+
+    struct struct_type_info : type_info
+    {
+        //map_ref< str_hash,  >
+    };
+
+    struct enum_type_info : type_info
+    {
+        
     };
 
     typedef std::pair< type_hash, type_info > type_pair_t;
@@ -126,7 +141,7 @@ namespace qw
         kVoidNotOnly   = 2,  // Void isn't the only type in this scenario.
     };
     template< size_t Size >
-    constexpr uint8_t validate_args( const array< type_hash, Size > _array, const bool _allow_void = true );
+    constexpr uint8_t validate_args( const array< type_hash, Size >& _array, const bool _allow_void = true );
 
     template< class Ty >
     struct valid_type
@@ -162,7 +177,7 @@ namespace qw
     {
         constexpr static size_t   kCount = 0;
         constexpr static uint64_t kHash  = Hashing::prime_64_const;
-        constexpr static array< type_hash, 0 > kTypes{ };
+        constexpr static auto     kTypes = array< type_hash, 0 >{};
     };
     template< class... Types >
     using args_hash = types_hash< true, Types... >;
@@ -178,7 +193,7 @@ template<> struct qw::get_type_info< void >
 }; // Void my beloved
 
 template< size_t Size >
-constexpr uint8_t qw::validate_args( const array< type_hash, Size > _array, const bool _allow_void )
+constexpr uint8_t qw::validate_args( const array< type_hash, Size >& _array, const bool _allow_void )
 {
     // TODO: Decide if void* should be allowed in the reflection system.
     if constexpr( Size == 1 )
@@ -208,7 +223,6 @@ constexpr uint8_t qw::validate_args( const array< type_hash, Size > _array, cons
 }
 
 // Counter from: https://stackoverflow.com/a/74453799
-
 template<auto Id>
 struct counter {
     using tag = counter;
@@ -244,12 +258,12 @@ namespace qw::registry
 } // qw::
 
 #if defined( IN_EDITOR )
-#define REGISTER_TYPE_INTERNAL( Type )
+#define REGISTER_TYPE_INTERNAL( Type ) COMMENT( Placeholder for type registry. )
 #else // IN_EDITOR
 #define REGISTER_TYPE_INTERNAL_0( Type, IdLocation ) \
 constexpr static auto IdLocation = unique_id(); \
 template<> struct qw::registry::type_registry< IdLocation >{ \
-    typedef qw::registry::type_registry< IdLocation - 1 > previous_t; \
+    typedef type_registry< IdLocation - 1 > previous_t; \
     constexpr static auto   Iteration  = IdLocation; \
     constexpr static array  registered = previous_t::registered + array{ get_type_info< Type >::kInfo.pair() }; \
     constexpr static bool valid = true; \

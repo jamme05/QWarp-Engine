@@ -9,6 +9,17 @@
 #include <Macros/for_each.h>
 #include <Macros/manipulation.h>
 
+namespace qw::runtime_struct
+{
+	struct sMemberInfo
+	{
+		type_hash   type;
+		const char* name;
+		size_t      size;
+		size_t      offset;
+	};
+} // qw::runtime_struct
+
 #define GET_MEMBER_M( Type, Name, ... ) Type Name ;
 #define GET_TYPE_M( Type, Name, ... ) Type
 #define GET_NAME_M( Type, Name, ... ) Name
@@ -36,10 +47,11 @@ BUILD_STRUCT_MEMBERS( __VA_ARGS__ ) \
 #define MAKE_STRUCT( Name, ... ) \
 BUILD_STRUCT_BODY( Name, __VA_ARGS__ ) \
 BUILD_TYPE_INFO( Name, __VA_ARGS__ )
- 
 
 MAKE_STRUCT( TestStruct,
 	M( int32_t, Count ),
 	M( int32_t, Count2 ),
 	M( int32_t, Count3 ),
+	M( int8_t, Count4 ),
+	M( int32_t, Count5 ),
 )

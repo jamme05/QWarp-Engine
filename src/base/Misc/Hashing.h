@@ -66,7 +66,12 @@ constexpr Class( Class&& _other ) noexcept : Hashing::iHashed( _other.m_hash ){}
 ~Class( void ) = default; \
 constexpr Class& operator=( const Class& ) = default; \
 constexpr Class& operator=( Class&& _other ) noexcept { m_hash = _other.m_hash;  return *this; } \
-constexpr bool   operator==( const Class& _other ) const { return m_hash == _other.m_hash; }
+constexpr bool   operator==( const Class& _other ) const { return m_hash == _other.m_hash; } \
+constexpr bool   operator<( const Class & _other ) const { return m_hash < _other.m_hash; } \
+constexpr bool   operator>( const Class & _other ) const { return m_hash > _other.m_hash; } \
+constexpr bool   operator<=( const Class & _other ) const { return m_hash <= _other.m_hash; } \
+constexpr bool   operator>=( const Class & _other ) const { return m_hash >= _other.m_hash; }
+
 
 	class iHashed
 	{
@@ -115,12 +120,16 @@ public:
 #define COPY_STRING( Str, Length ) m_raw = Str;
 // To allow copying over the saved string.
 #define STRING_HASH_REQUIREMENTS( Class ) \
-constexpr Class( const Class& _other ) : Hashing::iHashed( _other.m_hash ){}; \
-constexpr Class( Class && _other ) noexcept : Hashing::iHashed( _other.m_hash ){} \
+constexpr Class( const Class& _other ) : Hashing::iHashed( _other.m_hash ), m_raw( _other.m_raw ){}; \
+constexpr Class( Class && _other ) noexcept : Hashing::iHashed( _other.m_hash ), m_raw( _other.m_raw ){} \
 ~Class( void ) = default; \
-constexpr Class & operator=( const Class& _other ){ m_hash = _other.m_hash; return *this; } \
-constexpr Class & operator=( Class && _other ) noexcept { m_hash = _other.m_hash; return *this; } \
-constexpr bool   operator==( const Class & _other ) const { return m_hash == _other.m_hash; }
+constexpr Class & operator=( const Class& _other ){ m_hash = _other.m_hash; m_raw = _other.m_raw; return *this; } \
+constexpr Class & operator=( Class && _other ) noexcept { m_hash = _other.m_hash; m_raw = _other.m_raw; return *this; } \
+constexpr bool   operator==( const Class & _other ) const { return m_hash == _other.m_hash; } \
+constexpr bool   operator<( const Class & _other ) const { return m_hash < _other.m_hash; } \
+constexpr bool   operator>( const Class & _other ) const { return m_hash > _other.m_hash; } \
+constexpr bool   operator<=( const Class & _other ) const { return m_hash <= _other.m_hash; } \
+constexpr bool   operator>=( const Class & _other ) const { return m_hash >= _other.m_hash; }
 #else // !FINAL
 // Disable saving the raw string, but allow the function to exist
 #define STRING_HASH_MEMORY constexpr const char* get_string( void ){ return nullptr; }
@@ -128,6 +137,8 @@ constexpr bool   operator==( const Class & _other ) const { return m_hash == _ot
 #define COPY_STRING( ... )
 #define STRING_HASH_REQUIREMENTS( Class ) HASH_REQUIREMENTS( Class )
 #endif // FINAL
+
+// TODO: Copy string if not std::is_constant_evaluated()
 
 namespace qw
 {

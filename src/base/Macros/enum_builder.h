@@ -105,6 +105,8 @@ static constexpr sValue kInvalid = enum_value_creator< RAW ## Type, sValue >( st
 BUILD_ENUM_BODY( Type, __VA_ARGS__ ); \
 BUILD_ENUM_METADATA( Type, __VA_ARGS__ )
 
+#define MAKE_ENUM( Type, ... ) ENUM_CREATOR( Type, __VA_ARGS__ )
+
 template< class ETy, class Ty, class... Args >
 constexpr Ty enum_value_creator( ETy _value, const char* _name, const char* _display_name, Args... )
 {
