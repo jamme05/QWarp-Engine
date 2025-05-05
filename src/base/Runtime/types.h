@@ -43,6 +43,10 @@ namespace qw
 
     constexpr static type_hash kInvalid_Id = 0;
 
+    struct sType_Info;
+    extern const unordered_map< type_hash, const sType_Info* > type_map;
+    typedef std::pair< type_hash, const sType_Info* > type_pair_t;
+
     struct sType_Info
     {
         MAKE_ENUM( ENUMCLASS( eType ),
@@ -53,6 +57,7 @@ namespace qw
             E( kClass, "Class" )
         );
 
+        eType       type;
         type_hash   hash;
         size_t      size;
         const char* name;
@@ -67,9 +72,9 @@ namespace qw
         {
             return { .hash = hash, .size = size, .name = name, .raw_name = raw_name, .is_ref = true };
         } // as_ref
-        constexpr std::pair< type_hash, sType_Info > pair( void ) const
+        constexpr type_pair_t pair( void ) const
         {
-            return { hash, *this };
+            return { hash, this };
         } // pair
     };
 
@@ -83,22 +88,26 @@ namespace qw
             const char* display_name;
             size_t      size;
             size_t      offset;
+            [[nodiscard]] const sType_Info* get_type( void ) const;
         };
+
+        inline const sType_Info* sMemberInfo::get_type( void ) const
+        {
+            if( const auto it = type_map.find( type ); it != type_map.end() )
+                return it->second;
+            return nullptr;
+        } // get_type
     } // runtime_struct::
 
-    struct sStruct_Type_Info : public sType_Info
+    struct sStruct_Type_Info : sType_Info
     {
-        const char* tmp;
-        //map_ref< str_hash, runtime_struct::sMemberInfo, std::less< str_hash > > members;
+        map_ref< str_hash, runtime_struct::sMemberInfo, std::less< str_hash > > members;
     };
 
-    struct enum_type_info : sType_Info
+    struct sEnum_Type_Info : sType_Info
     {
         
     };
-
-    typedef std::pair< type_hash, sType_Info > type_pair_t;
-    extern const unordered_map< type_hash, sType_Info > type_map;
 
     template< class Ty >
     struct get_type_info
@@ -263,7 +272,7 @@ consteval auto unique_id() {
 
 namespace qw::registry
 {
-    template< size_t Iteration >
+    template< int64_t Iteration >
     struct type_registry
     {
         constexpr static array< type_pair_t, 0 > registered = {};
@@ -290,7 +299,7 @@ REGISTER_TYPE_INTERNAL( void )
 
 #define MAKE_TYPE_INFO_DIRECT( Type, Name, HashMacro, ... ) \
 template<> struct qw::get_type_info< Type >{ \
-constexpr static sType_Info kInfo   = { .hash HashMacro( __VA_ARGS__ ) , .size = sizeof( Type ), .name = Name, .raw_name = #Type }; \
+constexpr static sType_Info kInfo   = { .type = sType_Info::eType::kStandard, .hash HashMacro( __VA_ARGS__ ) , .size = sizeof( Type ), .name = Name, .raw_name = #Type }; \
 constexpr static bool      kValid = true; \
 };
 

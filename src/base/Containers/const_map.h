@@ -134,12 +134,16 @@ namespace qw
     class map_ref
     {
     public:
+        constexpr map_ref( void )
+        : m_size( 0 )
+        , m_data( nullptr )
+        {}
+
         /**
          *
          * @attention Requires _map to be static.
          * 
          * @tparam Size The size of the map.
-         * @tparam Pred The compare function.
          * @param _map The map to reference.
          */
         template< size_t Size >

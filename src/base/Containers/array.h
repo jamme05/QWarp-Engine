@@ -80,13 +80,6 @@ namespace qw
 
         constexpr size_t size( void ) const { return array_size; }
 
-    protected:
-        //constexpr const void* _get( void ) const override { return value; }
-        //constexpr void*       _get( void )       override { return value; }
-
-        //friend class array_ref< Ty >;
-
-    public:
         Ty value[ Size ];
     };
 
@@ -172,8 +165,6 @@ namespace qw
     array( Ty, Ty2... ) -> array< Ty, 1 + sizeof...( Ty2 ) >;
     template< class Ty, size_t Size >
     array( const Ty ( & )[ Size ] ) -> array< Ty, Size >;
-    template< class Ty >
-    array( void ) -> array< Ty, 0 >;
 
     template< size_t Size >
     using string = array< char, Size >;

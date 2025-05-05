@@ -14,10 +14,16 @@
 #define AFTER_FIRST( A, ... ) __VA_ARGS__
 #define SECOND( A, B, ... ) B
 
+#define PARENS ()
+
+#define PACK( ... ) _PACK( __VA_ARGS__ )
+#define UNWRAP( ... ) __VA_ARGS__
+#define UNWRAP_PACK( ... ) __VA_ARGS__
+
 #if defined( IN_EDITOR )
 // Selects B in editor and A in runtime
 #define PLACEHOLDER( A, B ) B
-#define COMMENT( ... ) struct CONCAT( comment_, __COUNTER__ ) { auto c = #__VA_ARGS__; }; /* Will only exist inside the editor. */ \
+#define COMMENT( ... ) constexpr static auto CONCAT( comment_, __COUNTER__ ) = #__VA_ARGS__; /* Will only exist inside the editor. */ \
     
 #else // IN_EDITOR
 // Selects B in editor and A in runtime

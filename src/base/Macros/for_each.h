@@ -3,7 +3,7 @@
 
 #pragma once
 
-#define PARENS ()
+#include "manipulation.h"
 
 #define EXPAND(...) EXPAND4(EXPAND4(EXPAND4(EXPAND4(__VA_ARGS__))))
 #define EXPAND4(...) EXPAND3(EXPAND3(EXPAND3(EXPAND3(__VA_ARGS__))))
@@ -45,4 +45,11 @@ __VA_OPT__(EXPAND(FOR_EACH_FORWARD_HELPER(macro, __VA_ARGS__)))
 macro(a1,__VA_ARGS__)                                                     \
 __VA_OPT__(FOR_EACH_FORWARD_AGAIN PARENS (macro, __VA_ARGS__))
 #define FOR_EACH_FORWARD_AGAIN() FOR_EACH_FORWARD_HELPER
+
+#define FOR_EACH_FORWARD_W_ARG(macro, arg, ...)                                    \
+__VA_OPT__(EXPAND(FOR_EACH_FORWARD_W_ARG_HELPER(macro, arg, __VA_ARGS__)))
+#define FOR_EACH_FORWARD_W_ARG_HELPER(macro, arg, a1, ...)                         \
+macro(arg,a1,__VA_ARGS__)                                                     \
+__VA_OPT__(FOR_EACH_FORWARD_W_ARG_AGAIN PARENS (macro, arg, __VA_ARGS__))
+#define FOR_EACH_FORWARD_W_ARG_AGAIN() FOR_EACH_FORWARD_W_ARG_HELPER
 
