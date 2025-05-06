@@ -35,7 +35,7 @@
 cApp::cApp( void )
 : iListener( qw::Input::eType::kAll, 10, true )
 {
-	qw::Input::setLogInputs( true );
+	qw::Input::setLogInputs( false );
 
 } // cApp
 
@@ -164,7 +164,36 @@ void cApp::create( void )
 	constexpr auto v2 = qw::args_hash< void >::kTypes;
 	constexpr auto v3 = qw::validate_args( v2, true );
 
+	print_types();
 } // _create
+
+void cApp::print_types( void )
+{
+	for( const auto& val : qw::type_map | std::views::values )
+	{
+		switch( val->type )
+		{
+		case qw::sType_Info::eType::kStandard:
+		{
+			printf( "Type: %s Name: %s Size: %lu \n", val->raw_name, val->name, static_cast< uint64_t >( val->size ) );
+		}
+		break;
+		case qw::sType_Info::eType::kStruct:
+		{
+			printf( "Struct: %s Name: %s Size: %lu \n", val->raw_name, val->name, static_cast< uint64_t >( val->size ) );
+			for( auto struct_info = static_cast< const qw::sStruct_Type_Info* >( val ); const auto& member : struct_info->members | std::views::values )
+			{
+				if( auto member_type = member.get_type() )
+				{
+					printf( "   Type: %s Name: %s Size: %lu Offset: %lu \n", member_type->raw_name, member.display_name, static_cast< uint64_t >( member.size ), static_cast< uint64_t >( member.offset ) );
+				}
+			}
+		}
+		break;
+		}
+	}
+
+}
 
 void cApp::custom_event( void )
 {

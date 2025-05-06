@@ -55,12 +55,4 @@ template<> struct qw::get_type_info< Type >{ \
 	BUILD_STRUCT_BODY( Name, __VA_ARGS__ ) \
 	BUILD_TYPE_INFO( Name, __VA_ARGS__ )
 
-MAKE_STRUCT( TestStruct,
-	M( int32_t, Count ),
-	M( int32_t, Count2 ),
-	M( int32_t, Count3 ),
-	M( int8_t, Count4 ),
-	M( int32_t, Count5 ),
-)
-
 //MAKE_TYPE_INFO_DIRECT( Type, Name, = GET_ARGS_HASH, Types )
