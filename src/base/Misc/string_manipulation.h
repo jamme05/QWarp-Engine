@@ -124,8 +124,8 @@ namespace qw::str
     requires is_valid_string< arr::type< Str >, arr::type< Find > >
     struct find
     {
-        constexpr static auto kIndex = find_index_of( Str.value, Find.value, Backwards );
-        constexpr static bool kFound = kIndex != -1;
+        constexpr static int64_t kIndex = find_index_of( Str.value, Find.value, Backwards );
+        constexpr static bool    kFound = kIndex != -1;
     };
 
     template< array Str, array Other >

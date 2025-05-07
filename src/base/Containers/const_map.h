@@ -67,7 +67,8 @@ namespace qw
         consteval const_map( const array< std::pair< KeyTy, ValueTy >, Size >& _array );
 
         // TODO: Make iterator so find can become constexpr?
-        constexpr const value_pair_type* find( const KeyTy& _key ) const;
+        constexpr int64_t find( const KeyTy& _key ) const;
+        constexpr const value_pair_type& get( const size_t _index ) const { return m_array[ _index ]; }
 
         constexpr const value_pair_type* begin( void ) const { return m_array.begin(); }
         constexpr const value_pair_type* begin( void )       { return m_array.begin(); }
@@ -96,7 +97,7 @@ namespace qw
     } // const_hashmap
 
     template< class KeyTy, class ValueTy, size_t Size, class Pred >
-    constexpr const typename const_map< KeyTy, ValueTy, Size, Pred >::value_pair_type*
+    constexpr int64_t
         const_map< KeyTy, ValueTy, Size,Pred >::find( const KeyTy& _key ) const
     {
         constexpr auto pred = Pred();
@@ -106,16 +107,17 @@ namespace qw
         for( size_t GET_MID; c != end_edge; GET_MID )
 #undef GET_MID
         {
+            // TODO: Figure out why this doesn't work.
             auto& current = m_array[ c ];
             if( current.first == _key )
-                return &current;
+                return static_cast< int64_t >( c );
             if( pred( current.first, _key ) )
                 begin_edge = c + 1;
             else
                 end_edge = c;
         }
 
-        return m_array.end();
+        return -1;
     } // find
 
     template< class KeyTy, class ValueTy, size_t Size, class Pred >

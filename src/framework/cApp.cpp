@@ -192,7 +192,6 @@ void cApp::print_types( void )
 		break;
 		}
 	}
-
 }
 
 void cApp::custom_event( void )

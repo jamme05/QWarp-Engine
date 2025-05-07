@@ -39,10 +39,9 @@
 #define MAKE_STRUCT_TYPE_INFO( Type, Name, MembersHash, Types, ... ) \
 template<> struct qw::get_type_info< Type >{ \
 	constexpr static auto kMembers = const_map{ BUILD_STRUCT_REFLECTED_MEMBERS( Type, __VA_ARGS__ ) }; \
-	constexpr static sStruct_Type_Info kInfo = { { sType_Info::eType::kStruct, MembersHash( UNWRAP_ ## Types ), sizeof( Type ), Name, #Type }, kMembers }; \
+	constexpr static sStruct_Type_Info kInfo = { { sType_Info::eType::kStruct, MembersHash( UNWRAP( Types ) ), sizeof( Type ), Name, #Type }, kMembers }; \
 	constexpr static bool      kValid = true; \
 	};
-
 
 #define REGISTER_STRUCT( Type, Types, Name, ... ) \
 	MAKE_STRUCT_TYPE_INFO( Type, Name, GET_ARGS_HASH, PACK( Types ), __VA_ARGS__ ) \

@@ -33,12 +33,12 @@ namespace Hashing
 		return ( _s[ 0 ] == '\0' ) ? _v : fnv1a_64( &_s[ 1 ], ( _v ^ static_cast< uint64_t >( static_cast< uint8_t >( _s[ 0 ] ) ) ) * prime_64_const );
 	}
 
-	constexpr uint32_t fnv1a_32s( const char* const _s, const size_t _c, const uint32_t _v = val_32_const ) noexcept {
-		return ( _c == 0 ) ? _v : fnv1a_32s( _s, _c - 1, ( _v ^ static_cast< uint32_t >( static_cast< uint8_t >( _s[ _c ] ) ) ) * prime_32_const );
+	constexpr uint32_t fnv1a_32s( const char* const _s, const size_t _c, const size_t _i = 0, const uint32_t _v = val_32_const ) noexcept {
+		return ( _i >= _c ) ? _v : fnv1a_32s( _s, _c, _i + 1, ( _v ^ static_cast< uint32_t >( static_cast< uint8_t >( _s[ _i ] ) ) ) * prime_32_const );
 	}
 
-	constexpr uint64_t fnv1a_64s( const char* const _s, const size_t _c, const uint64_t _v = val_64_const ) noexcept {
-		return ( _c == 0 ) ? _v : fnv1a_64s( _s, _c - 1, ( _v ^ static_cast< uint64_t >( static_cast< uint8_t >( _s[ _c ] ) ) ) * prime_64_const );
+	constexpr uint64_t fnv1a_64s( const char* const _s, const size_t _c, const size_t _i = 0, const uint64_t _v = val_64_const ) noexcept {
+		return ( _i >= _c ) ? _v : fnv1a_64s( _s, _c, _i + 1, ( _v ^ static_cast< uint64_t >( static_cast< uint8_t >( _s[ _i ] ) ) ) * prime_64_const );
 	}
 
 	inline uint32_t fnv1a_32( const std::string& _s ) noexcept {
@@ -155,6 +155,8 @@ namespace qw
 	class hash< char > : public Hashing::iHashed
 	{
 	public:
+		constexpr hash( void ) : iHashed( 0 ){}
+
 		constexpr hash( const std::string& _to_hash )
 		: iHashed( Hashing::fnv1a_64( _to_hash.c_str() ) )
 		{
@@ -181,8 +183,18 @@ namespace qw
 		}
 
 		constexpr hash( const char* _to_hash, const size_t _c )
-		: iHashed( Hashing::fnv1a_64s( _to_hash, _c, Hashing::val_64_const ) )
+		: iHashed( Hashing::fnv1a_64s( _to_hash, _c ) )
 		{
+			COPY_STRING( _to_hash, _c )
+		}
+
+		constexpr hash( const char* _to_hash, const int64_t _c )
+		: iHashed( 0 )
+		{
+			if( _c < 0 )
+				Hashing::fnv1a_64( _to_hash );
+			else
+				Hashing::fnv1a_64s( _to_hash, _c );
 			COPY_STRING( _to_hash, _c )
 		}
 

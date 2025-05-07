@@ -1,5 +1,6 @@
 #pragma once
 
+// Use if instead?
 #if defined( __INTELLISENSE__ ) || defined( __RESHARPER__ )
 #define IN_EDITOR 1
 #endif // __INTELLISENSE__ || __RESHARPER__
@@ -16,9 +17,10 @@
 
 #define PARENS ()
 
-#define PACK( ... ) _PACK( __VA_ARGS__ )
-#define UNWRAP( ... ) __VA_ARGS__
+#define IS_PACK( ... ) 1,
+
 #define UNWRAP_PACK( ... ) __VA_ARGS__
+#define UNWRAP( Pack ) UNWRAP_ ## Pack
 
 #if defined( IN_EDITOR )
 // Selects B in editor and A in runtime

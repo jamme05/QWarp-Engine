@@ -47,6 +47,9 @@ namespace qw
     extern const unordered_map< type_hash, const sType_Info* > type_map;
     typedef std::pair< type_hash, const sType_Info* > type_pair_t;
 
+    // Forward declare to allow for simpler casting.
+    struct sStruct_Type_Info;
+
     struct sType_Info
     {
         MAKE_ENUM( ENUMCLASS( eType ),
@@ -76,6 +79,11 @@ namespace qw
         {
             return { hash, this };
         } // pair
+        /**
+         * Function for converting to an instance of struct info.
+         * @return Itself as a sStruct_Type_Info if valid, or nullptr if invalid.
+         */
+        constexpr const sStruct_Type_Info* as_struct_info( void ) const;
     };
 
     // TODO: Move individual types to their own spaces.
@@ -88,6 +96,7 @@ namespace qw
             const char* display_name;
             size_t      size;
             size_t      offset;
+
             [[nodiscard]] const sType_Info* get_type( void ) const;
         };
 
@@ -108,6 +117,14 @@ namespace qw
     {
         
     };
+
+    // Functions for converting sType_Info
+    constexpr const sStruct_Type_Info* sType_Info::as_struct_info() const
+    {
+        if( type == eType::kStruct )
+            return static_cast< const sStruct_Type_Info* >( this );
+        return nullptr;
+    } // as_struct_info
 
     template< class Ty >
     struct get_type_info
