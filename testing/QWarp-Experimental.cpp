@@ -64,7 +64,7 @@ namespace qw
 
 constexpr static size_t requirements_display_name( qw::array_ref< char > _to_parse )
 {
-    return 0;
+    return 5;
 }
 constexpr static void handle_display_name( qw::array_ref< char > _to_parse, char* _out )
 {
@@ -97,13 +97,9 @@ static consteval auto get_requirements( void )
     constexpr auto val = std::get< Index >( Strings );
     typedef qw::str::find< val, "=" > search;
     // Make sure it hashes the correct part
-    qw::str_hash hash;
-    if constexpr( search::kFound )
-        hash = qw::str_hash( val.get(), search::kIndex );
-    else
-        hash = qw::str_hash( val.get() );
+    constexpr qw::str_hash hash = qw::str_hash( val.get(), search::kIndex );
 
-    if( auto p_index = parser_map.find( hash ); p_index != -1 )
+    if constexpr( constexpr auto p_index = parser_map.find( hash ); p_index != -1 )
     {
         const auto& parser = parser_map.get( p_index ).second;
         auto req = parser.requirements_func( val );
@@ -125,8 +121,7 @@ struct fetcher< true, Instance >
 {
     typedef typename Instance::tuple_t tuple_t;
     typedef iterate< Instance::kIndex + 1, Instance::kCount, tuple_t, Instance::kTuple > next_t;
-    static constexpr auto& next = next_t::requirements;
-    static constexpr auto requirements = next + get_requirements< Instance::kIndex, tuple_t, Instance::kTuple >(); //  +
+    static constexpr auto requirements = get_requirements< Instance::kIndex, tuple_t, Instance::kTuple >() + next_t::requirements; //  +
 };
 
 template< size_t Index, size_t Count, class Ty, const Ty& AsTuple >
@@ -143,7 +138,6 @@ struct iterate
 {
     typedef iterate_package< Index, Count, Ty, AsTuple > package_t;
     typedef fetcher< Index < Count, package_t > fetcher_t;
-    //typedef iterate< Index + 1, Count, Ty, AsTuple > next_t;
     static constexpr auto requirements = fetcher_t::requirements;
 };
 
@@ -176,8 +170,7 @@ int main()
     constexpr qw::str_hash h3{ "DisplayName=\"Test\"", search::kIndex };
     constexpr bool b1 = h1 == h2;
     
-    test_str< "DisplayName=\"Test\"", "Hidden=true", "ReadOnly" >::iterate_t::requirements;
-    test_str< "DisplayName=\"Test\"", "Hidden=true", "ReadOnly" >::requirements;
+    test_str< "DisplayName=\"Test\"", "Hidden=true", "ReadOnly" >::iterate_t::fetcher_t::next_t::fetcher_t::next_t::fetcher_t::requirements;
 
     return 0;
 }
