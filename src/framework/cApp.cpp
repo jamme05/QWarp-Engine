@@ -135,7 +135,7 @@ void cApp::create( void )
 	auto mesh = m_scene->create_object< qw::Object::iObject >( "Mesh Test 2" );
 	mesh->getTransform().getPosition() = { -2.0f, 0.0f, 0.0f };
 	mesh->getTransform().update();
-	mesh->addComponent< qw::Object::Components::cMeshComponent >( christopher_m )->setTexture( const_cast< qw::Assets::Texture::ptr_t& >( christopher_t ) );
+	mesh->addComponent< qw::Object::Components::cMeshComponent >( christopher_m )->setTexture( christopher_t );
 
 	mesh = m_scene->create_object< qw::Object::iObject >( "Mesh Test 3" );
 	mesh->getTransform().getPosition() = { 2.0f, 0.0f, 0.0f };
@@ -181,7 +181,7 @@ void cApp::print_types( void )
 		case qw::sType_Info::eType::kStruct:
 		{
 			printf( "Struct: %s Name: %s Size: %lu \n", val->raw_name, val->name, static_cast< uint64_t >( val->size ) );
-			for( auto struct_info = static_cast< const qw::sStruct_Type_Info* >( val ); const auto& member : struct_info->members | std::views::values )
+			for( auto struct_info = val->as_struct_info(); const auto& member : struct_info->members | std::views::values )
 			{
 				if( auto member_type = member.get_type() )
 				{

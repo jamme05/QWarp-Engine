@@ -187,9 +187,15 @@ namespace qw
 		constexpr static char      kName[] = kClass.getRawName();
 	};
 
+	template< class Ty >
+	constexpr static bool is_valid_class_v = std::is_base_of_v< iClass, Ty >;
 } // qw::
 
 // TODO: Rename getStaticClassType to getStaticType
+
+#define QW_BASE_CLASS( ... ) qw::iClass
+#define QW_CLASS_VALID( ClassName, Parent, ... ) qw::is_valid_class_v< Parent >
+#define QW_MESSAGE_CLASS_VALID( ClassName, Parent, ... ) qw::is_valid_class_v< Parent >, "Class " #Parent " isn't in the reflection system."
 
 // Required to make a runtime class functional.
 #define CREATE_CLASS_IDENTIFIERS( RuntimeClass ) public: \
@@ -198,7 +204,7 @@ namespace qw
 	constexpr const qw::hash< qw::iRuntimeClass >& getClassType( void ) override { return m_class.getType(); } \
 	const std::string                       getClassName( void ) override { return m_class.getName(); } \
 	static constexpr auto&  getStaticClass    ( void ){ return RuntimeClass;           } \
-	static constexpr auto&  getStaticClassType( void ){ return RuntimeClass .getType(); } \
+	static constexpr auto   getStaticClassType( void ){ return RuntimeClass .getType(); } \
 	static auto             getStaticClassName( void ){ return RuntimeClass .getName(); } \
 	protected:                              \
 	constexpr static auto& m_class = RuntimeClass; \
@@ -206,13 +212,92 @@ namespace qw
 
 #define CREATE_CLASS_BODY( Class ) CREATE_CLASS_IDENTIFIERS( runtime_class_ ## Class )
 
-#define CREATE_RUNTIME_CLASS_VALUE( Class, Name, ... ) static constexpr auto CONCAT( runtime_class_, Name ) = qw::cRuntimeClass< Class __VA_OPT__(,) FIRST( __VA_ARGS__ ) >( #Name, __FILE__, __LINE__ );
+#define CREATE_RUNTIME_CLASS_VALUE( Class, Name, ... ) static constexpr auto CONCAT( runtime_class_, Name ) = qw::cRuntimeClass< Class __VA_OPT__(,) FORWARD( __VA_ARGS__ ) >( #Name, __FILE__, __LINE__ );
 
 // Requires you to manually add CREATE_CLASS_IDENTIFIERS inside the body. But gives greater freedom. First inheritance will always have to be public. Unable to function with templated classes.
+// Deprecated
 #define GENERATE_CLASS( Class, ... ) \
 class Class ; \
 CREATE_RUNTIME_CLASS_VALUE( Class, Class, __VA_ARGS__ ) \
 class Class : public qw::get_inherits_t< FIRST( __VA_ARGS__ ) > \
 
 // Generates both runtime info and start of body body, but removes most of your freedom. Unable to function with templated classes.
+// Deprecated
 #define GENERATE_ALL_CLASS( Class, ... ) GENERATE_CLASS( Class __VA_OPT__(,) __VA_ARGS__ ) AFTER_FIRST( __VA_ARGS__ ) { CREATE_CLASS_BODY( Class )
+
+#define TRUE_MAC( ... ) true
+
+#define DEFAULT_CLASS_CREATOR_2( ... ) SECOND( __VA_ARGS__ )
+#define DEFAULT_CLASS_CREATOR_1( ... ) FIRST( __VA_ARGS__ )
+#define DEFAULT_CLASS_CREATOR( ClassName, ... ) CONCAT( DEFAULT_CLASS_CREATOR_, VARGS( __VA_ARGS__ ) )( __VA_ARGS__ )
+
+#define PICK_CLASS_3( ParentMacro, ParentCreator, CustomClass ) ParentCreator
+#define PICK_CLASS_2( ParentMacro, ParentCreator ) ParentMacro
+#define PICK_CLASS( ... ) CONCAT( PICK_CLASS_, VARGS( __VA_ARGS__ ) )( __VA_ARGS__ )
+
+// TODO: Use AFTER_FIRST to parse away the parent class?
+/**
+ * Not recommended to be used directly.
+ * @param ClassName The name of the class
+ * @param ClassType The type of the class, aka name after naming convention.
+ * @param ParentValidator Has a constexpr bool deciding if the parent is valid or not.
+ * @param ParentCreator Creates the final parent class. Includes said parent class if it isn't default.
+ * @param ExtrasMacro Extra reflection data within the namespace.
+ * @param ParentClass The parent class.
+ * @param ... Extra info for ExtrasMacro.
+ */
+#define QW_CLASS_INTERNAL( ClassName, ClassType, ParentValidator, ExtrasMacro, ParentCreator, ParentClass, ... ) \
+	class ClassType; \
+	namespace ClassName { \
+		static_assert( ParentValidator( ClassName, ParentClass ) ); \
+		typedef qw::cShared_ptr< ClassType > ptr_t; \
+		typedef qw::cWeak_Ptr< ClassType >   weak_t; \
+		typedef qw::cShared_Ref< ClassType > ref_t; \
+		CREATE_RUNTIME_CLASS_VALUE( ClassType, ClassName, ParentClass ) \
+		ExtrasMacro( ClassName __VA_OPT__( , ) __VA_ARGS__ ) \
+		typedef decltype( CONCAT( runtime_class_, ClassName ) ) runtime_class_t; \
+	} \
+	class ClassType : public ParentCreator( ClassName, ParentClass __VA_OPT__(, ParentClass ) )
+
+#define PICK_VALIDATOR( A, B, ... ) PICK_CLASS( A, B __VA_OPT__( , FIRST( __VA_ARGS__ ) ) )
+#define PICK_PARENT_MAC( A, B, ... ) PICK_CLASS( A, B __VA_OPT__( , FIRST( __VA_ARGS__ ) ) )
+
+/**
+ * Used below another macro to add requirements for class inheritance.
+ * Creates a class with a wider range of customization and restrictions.
+ * Have: QW_CLASS_BODY( ClassName ) inside the class body to complete the reflection.
+ * @param ClassName The name of the class
+ * @param ParentMacro Macro for getting the default parent class. Args: ClassName, ...
+ * @param ParentCreator Post-processing of the parent class. Will send the parent class again to allow for customization. Args: ClassName, ParentClass, [ParentClass] ...
+ * @param ParentValidator A macro that returns a bool deciding if the parent class is valid. Args: ClassName, Parent, ...
+ * @param ExtrasMacro In case there's demand for making anymore metadata. Args: ClassName, ...
+ * @param ... First argument is an optional Parent class. ParentMacro won't be called in this scenario. It and the rest will be forwarded into the macros.
+ */
+#define QW_RESTRICTED_CLASS( ClassName, ParentMacro, ParentCreator, ParentValidator, ExtrasMacro, ... ) \
+	QW_CLASS_INTERNAL( ClassName, M_CLASS( ClassName ), PICK_VALIDATOR( TRUE_MAC, ParentValidator __VA_ARGS__ ), ExtrasMacro, ParentCreator, PICK_CLASS( ParentMacro, SECOND __VA_OPT__( , FIRST( __VA_ARGS__ ) ) ) ( ClassName, __VA_ARGS__ ) __VA_OPT__(,) __VA_ARGS__ )
+
+/**
+ * Creates classes with extra reflection metadata.
+ * Have: QW_CLASS_BODY( ClassName ) inside the class body to complete the reflection.
+ * @param ClassName The name of the class
+ * @param ExtrasMacro In case there's demand for making anymore metadata. Args: ClassName, ...
+ * @param ... First argument is an optional Parent class. ParentMacro won't be called in this scenario. It and the rest will be forwarded into the macros.
+ */
+#define QW_CLASS_EX( ClassName, ExtrasMacro, ... ) \
+	QW_CLASS_INTERNAL( ClassName, M_CLASS( ClassName ), QW_MESSAGE_CLASS_VALID, ExtrasMacro, DEFAULT_CLASS_CREATOR, PICK_CLASS( QW_BASE_CLASS, SECOND __VA_OPT__( , FIRST( __VA_ARGS__ ) ) ) ( ClassName, __VA_ARGS__ ), __VA_ARGS__ )
+
+/**
+ * Creates classes reflected with the default metadata.
+ * Have: `QW_CLASS_BODY( ClassName )` inside the class body to complete the reflection.
+ * @param ClassName The name of the class
+ * @param Parent Optional parent class
+ * @param ... ParentMacro won't be called in this scenario. It and the rest will be forwarded into the macros.
+ */
+#define QW_CLASS( ClassName, ... ) \
+	QW_CLASS_EX( ClassName, EMPTY, __VA_ARGS__ )
+
+/**
+ * Creates everything required to get the class functional. Used in combination with QW_CLASS
+ * @param ClassName The name for the class to create the body for.
+ */
+#define QW_CLASS_BODY( ClassName ) CREATE_CLASS_IDENTIFIERS( ClassName :: CONCAT( runtime_class_, ClassName ) )

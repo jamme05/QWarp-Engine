@@ -13,7 +13,7 @@
 namespace qw::Object
 {
 	cCamera::cCamera( const std::string& _name )
-	: iObject( _name )
+	: cObject( _name )
 	{
 		const auto& renderer = Graphics::cRenderer::get();
 		auto& resolution     = renderer.getWindowResolution();

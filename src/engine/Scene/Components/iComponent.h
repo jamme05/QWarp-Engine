@@ -24,8 +24,7 @@ namespace qw::Object
 {
 	typedef uint64_t hash_t;
 
-	class iComponent
-	{
+	GENERATE_ALL_CLASS( iComponent )
 	protected:
 		iComponent( void ) = default;
 	public:
@@ -37,9 +36,6 @@ namespace qw::Object
 			m_object = nullptr;
 			m_children.clear();
 		}
-
-		virtual       hash_t       getType    ( void ) const = 0;
-		virtual const std::string& getTypeName( void ) const = 0;
 
 		// Event bases
 		virtual void update      ( void ){}
@@ -79,28 +75,19 @@ namespace qw::Object
 	};
 
 	// TODO: Check if type is necessary
-	template< class Ty, const char* Name, hash_t Hash, uint16_t Events >
+	template< class Ty, class ClassTy, const ClassTy& ClassRef, uint16_t Events >
 	class cComponent : public iComponent, public Event::cEventListener, public cShared_from_this< Ty >
 	{
-#define HAS_EVENT( Func ) !std::is_same_v< decltype( &Ty::Func ), decltype( &iComponent::Func ) >
+#define HAS_EVENT( Func, Val ) if constexpr( !std::is_same_v< decltype( &Ty::Func ), decltype( &iComponent::Func ) > ) events |= (Val)
 		constexpr static uint16_t detect_events( void )
 		{
 			uint16_t events = kNone;
 
-			if constexpr( HAS_EVENT( update ) )
-				events |= kUpdate;
-
-			if constexpr( HAS_EVENT( render ) )
-				events |= kRender;
-
-			if constexpr( HAS_EVENT( enabled ) )
-				events |= kEnabled;
-
-			if constexpr( HAS_EVENT( disabled ) )
-				events |= kDisabled;
-
-			if constexpr( HAS_EVENT( debug_render ) )
-				events |= kDebugRender;
+			HAS_EVENT( update,       kUpdate      );
+			HAS_EVENT( render,       kRender      );
+			HAS_EVENT( enabled,      kEnabled     );
+			HAS_EVENT( disabled,     kDisabled    );
+			HAS_EVENT( debug_render, kDebugRender );
 
 			return events;
 		} // detectEvents
@@ -116,15 +103,8 @@ namespace qw::Object
 			register_events();
 		} // cComponent
 
+		CREATE_CLASS_IDENTIFIERS( ClassRef )
 	public:
-		hash_t             getType    ( void ) const final { return type_hash; }
-		const std::string& getTypeName( void ) const final { return type_name; }
-
-		static constexpr auto& getClass    ( void ){ return cRuntimeClass< Ty >{}; } // TODO: Actual class
-		// Static variant of getType
-		static constexpr auto  getClassType( void ){ return type_hash; }
-		// Static variant of getTypeName
-		static constexpr auto& getClassName( void ){ return type_name; }
 
 		void setEnabled( const bool _is_enabled ) override { iComponent::setEnabled( _is_enabled ); _is_enabled ? postEvent< kEnabled >() : postEvent< kDisabled >(); }
 
@@ -162,21 +142,17 @@ namespace qw::Object
 			if constexpr( kEventMask & kRender      ) RegisterListener( kRender,      &Ty::render       );
 			if constexpr( kEventMask & kDebugRender ) RegisterListener( kDebugRender, &Ty::debug_render );
 		} // register_events
-
-	protected:
-		static constexpr    hash_t      type_hash = Hash;
-		static const inline std::string type_name = Name;
 	};
 
 } // qw::Object
 
-// TODO: Create a class object, something like unreals classes (fuck my life)
+#define COMPONENT_PARENT_CLASS( ComponentName, ... ) qw::Object::iComponent
+#define COMPONENT_PARENT_VALIDATOR( ComponentName, ... ) std::is_base_of< qw::Object::iComponent, __VA_ARGS__ >
+#define COMPONENT_PARENT_CREATOR_2( ComponentName, ... ) AFTER_FIRST( __VA_ARGS__ )
+#define COMPONENT_PARENT_CREATOR_1( ComponentName, ... ) qw::Object::cComponent< M_CLASS( ComponentName ), ComponentName::runtime_class_t, ComponentName :: CONCAT( runtime_class_, ComponentName ), qw::Object::kAll >
+#define COMPONENT_PARENT_CREATOR( ComponentName, ... ) CONCAT( COMPONENT_PARENT_CREATOR_, VARGS( __VA_ARGS__ ) ) ( ComponentName, __VA_ARGS__ )
+#define QW_COMPONENT_CLASS( ComponentName, ... ) QW_RESTRICTED_CLASS( ComponentName, COMPONENT_PARENT_CLASS, COMPONENT_PARENT_CREATOR, COMPONENT_PARENT_VALIDATOR, EMPTY __VA_OPT__( , __VA_ARGS__ ) )
 
-#define QW_COMPONENT_CLASS( ComponentName ) \
-class M_CLASS( ComponentName ); \
-namespace ComponentName { \
-static constexpr char     Component_Name[] = #ComponentName; \
-static constexpr hash_t   Type   = Hashing::fnv1a_32( Component_Name ); \
-typedef qw::cShared_ptr< M_CLASS( ComponentName ) > Shared_t; \
-} \
-class M_CLASS( ComponentName ) : public qw::Object::cComponent< M_CLASS( ComponentName ), ComponentName::Component_Name, ComponentName::Type, qw::Object::kAll >
+
+#define TQW_COMPONENT_CLASS( ComponentName ) \
+QW_CLASS( ComponentName, COMPONENT_PARENT_CLASS, EMPTY, qw::Object::kAll )

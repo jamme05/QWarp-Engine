@@ -16,7 +16,6 @@ namespace qw
 	const unordered_map< type_hash, const sType_Info* > type_map = { types.begin(), types.end() };
 } // qw::
 
-
 int main( int, char** )
 {
 	qw::Memory::cTracker::initialize();

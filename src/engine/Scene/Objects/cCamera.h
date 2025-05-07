@@ -11,13 +11,13 @@
 
 namespace qw::Object
 {
-	class cCamera : public iObject
+	QW_OBJECT_CLASS( Camera )
 	{
 	public:
 		explicit cCamera( const std::string& _name );
 
 		void setAsMain( void ) const;
 
-		Components::CameraComponent::Shared_t m_camera;
+		Components::CameraComponent::ptr_t m_camera;
 	};
 } // qw::Object

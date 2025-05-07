@@ -11,7 +11,7 @@
 
 namespace qw::Object
 {
-	class cCameraFlight : public cCamera, public Input::iListener
+	QW_OBJECT_CLASS( CameraFlight, cCamera ), public Input::iListener
 	{
 	public:
 		 cCameraFlight( const std::string& _name, const float _movement_speed = 5.0f, const float _rotation_speed = 40.0f );

@@ -25,14 +25,15 @@ namespace qw
 namespace qw::Object
 {
 // TODO: Check if class shit is needed? Like with Assets and Components.
-	class iObject : public Event::cEventListener, public cShared_from_this< iObject >
+	GENERATE_CLASS( iObject ), public Event::cEventListener, public cShared_from_this< iObject >
 	{
+	CREATE_CLASS_IDENTIFIERS( runtime_class_iObject )
 	public:
 		// TODO: Create templated constructor with root type + parameters
 		explicit iObject( std::string _name )
 		: m_root( qw::make_shared< Components::cTransformComponent >() )
 		, m_name( std::move( _name ) )
-	{
+		{
 		} // iObject
 
 		template< class Ty = iComponent, class... Args >
@@ -42,7 +43,7 @@ namespace qw::Object
 	{
 		} // iObject
 
-		virtual ~iObject( void )
+		~iObject( void ) override
 		{
 			m_children.clear();
 			m_components.clear();
@@ -58,12 +59,12 @@ namespace qw::Object
 			ptr->m_object = get_weak_this();
 			ptr->setParent( m_root );
 
-			m_components.insert( std::pair{ Ty::getClassType(), ptr } );
+			m_components.insert( std::pair{ Ty::getStaticClassType(), ptr } );
 
 			return ptr;
 		} // addComponent
 
-		// TODO: Add an event system like the components have.
+		// TODO: Deprecate?
 		virtual void render( void )
 		{
 			// TODO: Add actual event vector or something.
@@ -72,13 +73,13 @@ namespace qw::Object
 				val->postEvent( kRender );
 				val->postEvent( kDebugRender );
 			}
-		}
+		} // render
 
 		virtual void update( void )
 		{
 			for( auto& val : m_components | std::views::values )
 				val->postEvent( kUpdate );
-		}
+		} // update
 
 		auto& getRoot( void )       { return m_root; }
 		auto& getRoot( void ) const { return m_root; }
@@ -103,14 +104,32 @@ namespace qw::Object
 	private:
 		// TODO: Move types to typedefs
 		vector            < cShared_ptr< iObject > >    m_children   = { };
-		multimap< uint64_t, cShared_ptr< iComponent > > m_components = { };
+		multimap< type_hash, cShared_ptr< iComponent > > m_components = { };
 
 		std::string m_name;
 
 		cScene* m_parent_scene = nullptr;
 
 		friend class cScene;
-
 	};
-} // qw::Scene::
 
+	template< class Ty, class ClassTy, const ClassTy& ClassRef >
+	class cObject : public iObject
+	{
+		CREATE_CLASS_IDENTIFIERS( ClassRef )
+
+	public:
+		explicit cObject( std::string _name ) : iObject( std::move( _name ) ){}
+	};
+
+} // qw::Object::
+
+#define OBJECT_PARENT_CLASS( ObjectName, ... ) qw::Object::iObject
+#define OBJECT_PARENT_VALIDATOR( ObjectName, ... ) std::is_base_of< qw::Object::iObject, __VA_ARGS__ >
+#define OBJECT_PARENT_CREATOR_2( ObjectName, ... ) AFTER_FIRST( __VA_ARGS__ )
+#define OBJECT_PARENT_CREATOR_1( ObjectName, ... ) cObject< M_CLASS( ObjectName ), ObjectName :: runtime_class_t, ObjectName :: CONCAT( runtime_class_, ObjectName ) >
+#define OBJECT_PARENT_CREATOR( ObjectName, ... ) CONCAT( OBJECT_PARENT_CREATOR_, VARGS( __VA_ARGS__ ) ) ( ObjectName, __VA_ARGS__ )
+#define QW_OBJECT_CLASS( ObjectName, ... ) QW_RESTRICTED_CLASS( ObjectName, OBJECT_PARENT_CLASS, OBJECT_PARENT_CREATOR, OBJECT_PARENT_VALIDATOR, EMPTY __VA_OPT__( , __VA_ARGS__ ) )
+
+#define OBJECT_CLASS_PARENT( ObjectName )
+//#define QW_OBJECT_CLASS( ObjectName ) QW_CLASS( ObjectName, OBJECT_CLASS_PARENT, EMPTY )
