@@ -152,7 +152,3 @@ namespace qw::Object
 #define COMPONENT_PARENT_CREATOR_1( ComponentName, ... ) qw::Object::cComponent< M_CLASS( ComponentName ), ComponentName::runtime_class_t, ComponentName :: CONCAT( runtime_class_, ComponentName ), qw::Object::kAll >
 #define COMPONENT_PARENT_CREATOR( ComponentName, ... ) CONCAT( COMPONENT_PARENT_CREATOR_, VARGS( __VA_ARGS__ ) ) ( ComponentName, __VA_ARGS__ )
 #define QW_COMPONENT_CLASS( ComponentName, ... ) QW_RESTRICTED_CLASS( ComponentName, COMPONENT_PARENT_CLASS, COMPONENT_PARENT_CREATOR, COMPONENT_PARENT_VALIDATOR, EMPTY __VA_OPT__( , __VA_ARGS__ ) )
-
-
-#define TQW_COMPONENT_CLASS( ComponentName ) \
-QW_CLASS( ComponentName, COMPONENT_PARENT_CLASS, EMPTY, qw::Object::kAll )

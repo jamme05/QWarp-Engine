@@ -25,8 +25,8 @@ namespace qw::Assets
 	// A container for the newly imported assets.
 	class cAsset_List
 	{
-		typedef std::multimap< hash< iRuntimeClass >, cShared_ptr< iAsset > > asset_map_t;
-		typedef std::map< hash< iRuntimeClass >, size_t >                     asset_counter_map_t;
+		typedef std::multimap< type_hash, cShared_ptr< iAsset > > asset_map_t;
+		typedef std::map< type_hash, size_t >                     asset_counter_map_t;
 
 		class asset_iterator
 		{

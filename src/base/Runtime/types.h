@@ -14,6 +14,7 @@
 
 #include <Containers/map.h>
 
+#include "types.h"
 #include "Macros/enum_builder.h"
 
 namespace qw
@@ -34,6 +35,11 @@ namespace qw
         : iHashed( _raw_value )
         {
         } // type_hash
+        constexpr hash( const char* _str, const uint64_t _val )
+        : iHashed( Hashing::fnv1a_64( _str, _val ) )
+        {
+        } // type_hash
+
 
         HASH_REQUIREMENTS( hash )
     };
@@ -107,6 +113,26 @@ namespace qw
             return nullptr;
         } // get_type
     } // runtime_struct::
+    namespace runtime_enum
+    {
+        struct sMemberInfo
+        {
+            type_hash   type;
+            str_hash    name_hash; // Original name shouldn't be required to be accessed?
+            const char* display_name;
+            size_t      size;
+            size_t      offset;
+
+            [[nodiscard]] const sType_Info* get_type( void ) const;
+        };
+
+        inline const sType_Info* sMemberInfo::get_type( void ) const
+        {
+            if( const auto it = type_map.find( type ); it != type_map.end() )
+                return it->second;
+            return nullptr;
+        } // get_type
+    } // runtime_struct::
 
     struct sStruct_Type_Info : sType_Info
     {
@@ -115,12 +141,13 @@ namespace qw
 
     struct sEnum_Type_Info : sType_Info
     {
-        
+        map_ref< str_hash, runtime_struct::sMemberInfo, std::less< str_hash > > members;
     };
 
     // Functions for converting sType_Info
     constexpr const sStruct_Type_Info* sType_Info::as_struct_info() const
     {
+        // In case this fails someone created it with the wrong type.
         if( type == eType::kStruct )
             return static_cast< const sStruct_Type_Info* >( this );
         return nullptr;
@@ -131,6 +158,7 @@ namespace qw
     {
         // static_assert( false, "Invalid Type" );
         constexpr static sType_Info kInfo = {
+            .type = sType_Info::eType::kStandard,
             .hash = kInvalid_Id,
             .size = 0,
             .name = "Invalid",

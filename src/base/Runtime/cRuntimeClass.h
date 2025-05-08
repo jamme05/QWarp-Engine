@@ -14,18 +14,6 @@
 
 namespace qw
 {
-	class iRuntimeClass;
-	template<>
-	class hash< iRuntimeClass > : public Hashing::iHashed
-	{
-	public:
-	constexpr hash( const char* _str, const uint64_t _val )
-	: iHashed( Hashing::fnv1a_64( _str, _val ) )
-	{}
-
-	HASH_REQUIREMENTS( hash )
-	};
-
 	class iClass;
 
 	class iRuntimeClass
@@ -51,10 +39,10 @@ namespace qw
 		constexpr bool operator==( const iRuntimeClass& _right ) const { return m_hash == _right.m_hash; }
 
 	private:
-		hash< iRuntimeClass > m_hash;
-		const char*    m_raw_name;
-		const char*    m_file_path;
-		size_t         m_line;
+		type_hash   m_hash;
+		const char* m_raw_name;
+		const char* m_file_path;
+		size_t      m_line;
 	};
 
 	constexpr static iRuntimeClass kInvalidClass{ "Invalid", __FILE__ };
@@ -173,9 +161,9 @@ namespace qw
 	public:
 		iClass( void ) = default;
 		virtual ~iClass( void ) = default;
-		virtual constexpr const iRuntimeClass&         getClass    ( void ) const = 0;
-		virtual constexpr const hash< iRuntimeClass >& getClassType( void ) = 0;
-		virtual constexpr const std::string     getClassName( void ) = 0;
+		virtual constexpr const iRuntimeClass& getClass    ( void ) const = 0;
+		virtual constexpr const type_hash&     getClassType( void ) = 0;
+		virtual                 std::string    getClassName( void ) = 0;
 	};
 
 	template< class Ty >
@@ -201,10 +189,10 @@ namespace qw
 #define CREATE_CLASS_IDENTIFIERS( RuntimeClass ) public: \
 	typedef decltype( RuntimeClass ) class_type;           \
 	constexpr const qw::iRuntimeClass&             getClass    ( void ) const override { return m_class;     } \
-	constexpr const qw::hash< qw::iRuntimeClass >& getClassType( void ) override { return m_class.getType(); } \
-	const std::string                       getClassName( void ) override { return m_class.getName(); } \
+	constexpr const qw::type_hash& getClassType( void ) override { return m_class.getType(); } \
+	std::string                       getClassName( void ) override { return m_class.getName(); } \
 	static constexpr auto&  getStaticClass    ( void ){ return RuntimeClass;           } \
-	static constexpr auto   getStaticClassType( void ){ return RuntimeClass .getType(); } \
+	static constexpr auto&  getStaticClassType( void ){ return RuntimeClass .getType(); } \
 	static auto             getStaticClassName( void ){ return RuntimeClass .getName(); } \
 	protected:                              \
 	constexpr static auto& m_class = RuntimeClass; \
@@ -274,7 +262,7 @@ class Class : public qw::get_inherits_t< FIRST( __VA_ARGS__ ) > \
  * @param ... First argument is an optional Parent class. ParentMacro won't be called in this scenario. It and the rest will be forwarded into the macros.
  */
 #define QW_RESTRICTED_CLASS( ClassName, ParentMacro, ParentCreator, ParentValidator, ExtrasMacro, ... ) \
-	QW_CLASS_INTERNAL( ClassName, M_CLASS( ClassName ), PICK_VALIDATOR( TRUE_MAC, ParentValidator __VA_ARGS__ ), ExtrasMacro, ParentCreator, PICK_CLASS( ParentMacro, SECOND __VA_OPT__( , FIRST( __VA_ARGS__ ) ) ) ( ClassName, __VA_ARGS__ ) __VA_OPT__(,) __VA_ARGS__ )
+	QW_CLASS_INTERNAL( ClassName, M_CLASS( ClassName ), PICK_VALIDATOR( TRUE_MAC, ParentValidator __VA_OPT__(,) __VA_ARGS__ ), ExtrasMacro, ParentCreator, PICK_CLASS( ParentMacro, SECOND __VA_OPT__( , FIRST( __VA_ARGS__ ) ) ) ( ClassName, __VA_ARGS__ ) __VA_OPT__(,) __VA_ARGS__ )
 
 /**
  * Creates classes with extra reflection metadata.

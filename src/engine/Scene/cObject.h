@@ -103,7 +103,7 @@ namespace qw::Object
 
 	private:
 		// TODO: Move types to typedefs
-		vector            < cShared_ptr< iObject > >    m_children   = { };
+		vector             < cShared_ptr< iObject > >    m_children   = { };
 		multimap< type_hash, cShared_ptr< iComponent > > m_components = { };
 
 		std::string m_name;
@@ -125,7 +125,7 @@ namespace qw::Object
 } // qw::Object::
 
 #define OBJECT_PARENT_CLASS( ObjectName, ... ) qw::Object::iObject
-#define OBJECT_PARENT_VALIDATOR( ObjectName, ... ) std::is_base_of< qw::Object::iObject, __VA_ARGS__ >
+#define OBJECT_PARENT_VALIDATOR( ObjectName, ... ) std::is_base_of_v< qw::Object::iObject, __VA_ARGS__ >
 #define OBJECT_PARENT_CREATOR_2( ObjectName, ... ) AFTER_FIRST( __VA_ARGS__ )
 #define OBJECT_PARENT_CREATOR_1( ObjectName, ... ) cObject< M_CLASS( ObjectName ), ObjectName :: runtime_class_t, ObjectName :: CONCAT( runtime_class_, ObjectName ) >
 #define OBJECT_PARENT_CREATOR( ObjectName, ... ) CONCAT( OBJECT_PARENT_CREATOR_, VARGS( __VA_ARGS__ ) ) ( ObjectName, __VA_ARGS__ )

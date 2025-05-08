@@ -8,9 +8,11 @@
 
 #include <Types/types.h>
 
+#include "Misc/cSingleton.h"
+
 namespace qw
 {
-	class cLightManager
+	class cLightManager : public cSingleton< cLightManager >
 	{
 	public:
 		cLightManager();
