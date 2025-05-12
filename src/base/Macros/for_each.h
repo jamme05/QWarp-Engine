@@ -18,6 +18,13 @@ macro(a1)                                                     \
 __VA_OPT__(FOR_EACH_AGAIN PARENS (macro, __VA_ARGS__))
 #define FOR_EACH_AGAIN() FOR_EACH_HELPER
 
+#define FOR_EACH_W_ARG(macro,arg, ...)                                    \
+__VA_OPT__(EXPAND(FOR_EACH_W_ARG_HELPER(macro,arg, __VA_ARGS__)))
+#define FOR_EACH_W_ARG_HELPER(macro,arg, a1, ...)                         \
+macro(arg,a1)                                                     \
+__VA_OPT__(FOR_EACH_W_ARG_AGAIN PARENS (macro, arg, __VA_ARGS__))
+#define FOR_EACH_W_ARG_AGAIN() FOR_EACH_W_ARG_HELPER
+
 #define COUNTER_FOR_EACH(macro, counter, ...)                      \
 __VA_OPT__(EXPAND(COUNTER_FOR_EACH_HELPER(macro, counter, __VA_ARGS__)))
 #define COUNTER_FOR_EACH_HELPER(macro, counter, a1, ...)                    \

@@ -9,8 +9,11 @@
 #include "Memory/cInternal.h"
 #include "Misc/cSingleton.h"
 
-#include <unordered_map>
+#include <unordered_set>
 #include <mutex>
+#include <source_location>
+
+#include "Macros/enum_builder.h"
 
 namespace qw::Memory
 {
@@ -23,8 +26,7 @@ namespace qw::Memory
 		};
 
 		// Can track source usage
-		extern void* alloc( const char* _file_name, const char* _function, const uint32_t _line, size_t _size );
-		extern void  add  ( const char* _file_name, const char* _function, const uint32_t _line, void*  _block );
+		extern void* alloc( size_t _size, const std::source_location& _location = std::source_location::current() );
 		extern void  free ( void* _block );
 		extern size_t max_heap_size( void );
 
@@ -32,47 +34,68 @@ namespace qw::Memory
 
 	class cTracker : public cSingleton< cTracker >
 	{
+	public:
+		MAKE_UNREFLECTED_ENUM( ENUMCLASS( eTrackerAction, uint16_t ),
+			E( kAllocate, "Allocation" ),
+			E( kReallocate, "Reallocation" ),
+			E( kFree, "Freed" )
+		);
+
+		struct sFile_info
+		{
+			const char*    file_name;
+			const char*    function;
+			uint32_t       line;
+			uint16_t       column;
+			eTrackerAction action;
+		};
+
 		struct sTracker_entry
 		{
-			const char* file_name;
-			const char* function;
-			uint32_t    line;
+			sFile_info  last_change;
+			sFile_info* history;
+			uint16_t    changes;
+			uint16_t    flags;
+			uint32_t    reallocations;
+			// Size excluding itself.
+			size_t      size;
 			size_t      total_size;
-			uint32_t    flags;
 		};
 
 		struct sStatistics
 		{
-			size_t memory_allocated = 0u;
-			size_t memory_freed     = 0u;
-			size_t allocation_count = 0u;
-			size_t free_count       = 0u;
+			size_t memory_allocated_exc_head = 0u;
+			size_t memory_allocated_inc_head = 0u;
+			size_t memory_freed_exc_head     = 0u;
+			size_t memory_freed_inc_head     = 0u;
+			size_t allocation_count          = 0u;
+			size_t free_count                = 0u;
 		};
 
-		typedef std::unordered_map< void*, sTracker_entry > block_map_t;
+		typedef std::unordered_set< void* > block_set_t;
 
-		block_map_t m_block_map;
-		sStatistics m_statistics;
-		std::mutex  m_mtx;
-
-
-	public:
-		void* alloc( const char* _file_name, const char* _function, const uint32_t _line, const size_t _size );
-		void  free ( void* _block );
-		void  free ( const block_map_t::value_type& _block );
-		void  add  ( const char* _file_name, const char* _function, const uint32_t _line, void* _block );
-		// TODO: Add realloc
+		void* alloc  ( const size_t _size, const std::source_location& _location = std::source_location::current() );
+		void  free   ( void* _block );
+		void* realloc( void* _block, const size_t _size, const std::source_location& _location = std::source_location::current() );
 
 		 cTracker( void );
 		~cTracker( void );
 
-		static void* Alloc( const char* _file_name, const char* _function, const uint32_t _line, const size_t _size ){ return get().alloc( _file_name, _function, _line, _size ); }
-		static void  Add  ( const char* _file_name, const char* _function, const uint32_t _line, void*  _block ){ get().add( _file_name, _function, _line, _block ); }
+		// TODO: Implement history save.
+		static void  SetSaveHistory( const bool _save_history );
+		static void* Alloc( const size_t _size, const auto& _location = std::source_location::current() ){ return get().alloc( _size, _location ); }
 		static void  Free ( void*  _block ){ get().free( _block ); }
 
 		static size_t GetAvailableHeapSpace( void );
 
 		static size_t m_memory_usage;
+
+private:
+		void free( const block_set_t::iterator& _entry );
+
+		block_set_t m_block_set;
+		sStatistics m_statistics;
+		std::mutex  m_mtx;
 
 	}; // cTracker
 
@@ -80,11 +103,11 @@ namespace qw::Memory
 	extern void  free_fast ( void*  _block );
 
 	template< typename Ty, typename... Args >
-	static Ty* alloc( const char* _file_name, const char* _function, const uint32_t _line, const size_t _count, Args&&... _args )
+	static Ty* alloc( const size_t _count, const std::source_location& _location, Args&&... _args )
 	{
 		const size_t size = get_size< Ty >( _count ) + sizeof( size_t );
 
-		auto count_ptr = static_cast< size_t* >( Tracker::alloc( _file_name, _function, _line, size ) );
+		auto count_ptr = static_cast< size_t* >( Tracker::alloc( size, _location ) );
 		    *count_ptr = _count;
 
 		Ty* ptr = reinterpret_cast< Ty* >( count_ptr + 1 );
@@ -139,13 +162,13 @@ namespace qw::Memory
  * 
  * Arguments: Byte Size
  */
-#define QW_ALLOC( Size ) qw::Memory::Tracker::alloc( __FILE__, __FUNCTION__, __LINE__, Size )
+#define QW_ALLOC( Size ) qw::Memory::Tracker::alloc( Size )
 /**
  * Default tracked new.
  * 
  * Arguments: Type, Count, Args...
  */
-#define QW_NEW( Ty, ... ) qw::Memory::alloc< Ty >( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__ )
+#define QW_NEW( Ty, Count, ... ) qw::Memory::alloc< Ty >( Count, std::source_location::current() __VA_OPT__(,) __VA_ARGS__ )
 /**
  * Virtual array tracked new.
  *
@@ -153,19 +176,19 @@ namespace qw::Memory
  * 
  * Arguments: Type, Count.
  */
-#define QW_VIRTUAL( Ty, Count ) qw::Memory::alloc< Ty* >( __FILE__, __FUNCTION__, __LINE__, Count, nullptr )
+#define QW_VIRTUAL( Ty, Count ) qw::Memory::alloc< Ty*, Ty* >( Count, std::source_location::current(), nullptr )
 /**
  * Single object tracked new.
  * 
  * Arguments: Type, Args...
  */
-#define QW_SINGLE( Ty, ... ) qw::Memory::alloc< Ty >( __FILE__, __FUNCTION__, __LINE__, 1, __VA_ARGS__ )
+#define QW_SINGLE( Ty, ... ) qw::Memory::alloc< Ty >( 1, std::source_location::current(), __VA_ARGS__ )
 /**
  * Single object without params tracked new.
  * 
  * Arguments: Type, Args...
  */
-#define QW_SINGLE_EMPTY( Ty ) qw::Memory::alloc< Ty >( __FILE__, __FUNCTION__, __LINE__, 1 )
+#define QW_SINGLE_EMPTY( Ty ) qw::Memory::alloc< Ty >( 1, std::source_location::current() )
 /**
  * Tracked free.
  * 

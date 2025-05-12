@@ -58,7 +58,7 @@ namespace qw
 
     struct sType_Info
     {
-        MAKE_ENUM( ENUMCLASS( eType ),
+        MAKE_UNREFLECTED_ENUM( ENUMCLASS( eType ),
             E( kStandard, "Standard" ),
             E( kEnum, "Enum" ),
             E( kArray, "Array" ),
@@ -94,26 +94,6 @@ namespace qw
 
     // TODO: Move individual types to their own spaces.
     namespace runtime_struct
-    {
-        struct sMemberInfo
-        {
-            type_hash   type;
-            str_hash    name_hash; // Original name shouldn't be required to be accessed?
-            const char* display_name;
-            size_t      size;
-            size_t      offset;
-
-            [[nodiscard]] const sType_Info* get_type( void ) const;
-        };
-
-        inline const sType_Info* sMemberInfo::get_type( void ) const
-        {
-            if( const auto it = type_map.find( type ); it != type_map.end() )
-                return it->second;
-            return nullptr;
-        } // get_type
-    } // runtime_struct::
-    namespace runtime_enum
     {
         struct sMemberInfo
         {

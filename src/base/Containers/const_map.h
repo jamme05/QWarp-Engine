@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "map.h"
 #include "Containers/array.h"
 #include "Misc/Hashing.h"
 
@@ -77,9 +76,6 @@ namespace qw
 
         constexpr size_t size( void ) const { return m_array.size(); }
 
-        map< KeyTy, ValueTy, Pred >     to_map( void ) const;
-        unordered_map< KeyTy, ValueTy > to_unordered_map( void ) const;
-
         constexpr static bool _compare( const value_pair_type& _left, const value_pair_type& _right )
         {
             constexpr auto pred = Pred();
@@ -119,18 +115,6 @@ namespace qw
 
         return -1;
     } // find
-
-    template< class KeyTy, class ValueTy, size_t Size, class Pred >
-    map< KeyTy, ValueTy, Pred > const_map< KeyTy, ValueTy, Size, Pred >::to_map() const
-    {
-        return map< KeyTy, ValueTy, Pred >{ m_array.begin(), m_array.end() };
-    } // to_map
-
-    template< class KeyTy, class ValueTy, size_t Size, class Pred >
-    unordered_map< KeyTy, ValueTy > const_map< KeyTy, ValueTy, Size, Pred >::to_unordered_map() const
-    {
-        return unordered_map< KeyTy, ValueTy >{ m_array.begin(), m_array.end() };
-    } // to_unordered_map
 
     template< class KeyTy, class ValueTy, class Pred >
     class map_ref
