@@ -1,8 +1,7 @@
 param (
 	[string]$toolset = "vs2022",
 	[string]$target_abi = $null,
-	[string]$device,
-	[switch]$unity_build = $false
+	[string]$device
 )
 
 # Let the environment override a toolset, if there is an environment variable set.
@@ -11,21 +10,11 @@ if ($env:toolset)
 	$toolset = $env:toolset
 }
 
-$parameters = ""
+$parameters = "--file=Builder\Project_Builder.lua"
 
 if ($device)
 {
 	$parameters = "$parameters --target-device=$device"
-}
-if ($library_share_cache)
-{
-	$parameters = "$parameters --library-share-cache"
-}
-if ($unity_build)
-{
-	$processor_info = Get-WmiObject -Class Win32_Processor -Property "NumberOfLogicalProcessors"
-	$num_logical_processors = ($processor_info."NumberOfLogicalProcessors" -split '\n')[0]
-	$parameters = "$parameters --compilationunit=$num_logical_processors"
 }
 if ($target_abi)
 {

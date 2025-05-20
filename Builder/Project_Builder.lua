@@ -6,6 +6,8 @@ premake.override( path, "getDefaultSeparator", function( base )
 	end
 end )
 
+local root_build_dir = "Project/"
+
 include "load_target"
 
 workspace "QWarp Playground"
