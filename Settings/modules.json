@@ -1,10 +1,10 @@
 [
     {
-        "Id"   : "c895cc22-aa64-46d2-badc-2a4c233b0989",
-        "Path" : "Win64_Platform"
+        "Id"  : "c895cc22-aa64-46d2-badc-2a4c233b0989",
+        "Dir" : "Win64_Platform"
     },
     {
-        "Id"   : "40ae8314-183a-4cae-96ee-e27e8eda6443",
-        "Path" : "Vulkan_Graphics"
+        "Id"  : "40ae8314-183a-4cae-96ee-e27e8eda6443",
+        "Dir" : "Vulkan_Graphics"
     }
 ]

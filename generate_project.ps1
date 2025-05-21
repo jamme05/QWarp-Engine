@@ -10,7 +10,7 @@ if ($env:toolset)
 	$toolset = $env:toolset
 }
 
-$parameters = "--file=Builder\Project_Builder.lua"
+$parameters = "--file=.\Builder\Project_Builder.lua"
 
 if ($device)
 {
@@ -23,7 +23,7 @@ if ($target_abi)
 
 # Append the toolset.
 $parameters = "$parameters $toolset"
-$executable = "utils\premake5"
+$executable = ".\Builder\utils\premake5.exe"
 
 $process = Start-Process $executable $parameters -Wait -NoNewWindow -PassThru
 if ($process.ExitCode -ne 0) { throw "Project generation error " + $process.ExitCode }

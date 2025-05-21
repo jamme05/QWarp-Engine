@@ -6,30 +6,40 @@ premake.override( path, "getDefaultSeparator", function( base )
 	end
 end )
 
-local root_build_dir = "Project/"
+include( "./utils/Module_Manager.lua" )
 
-include "load_target"
+-- Return to root dir.
+os.chdir( "../" )
+
+Load_Modules()
+
+-- TODO: Move to external file.
+function CMakeBuilder( dependency )
+    local dependency_path = "./Build/External/" .. dependency .. "/CMAKE"
+    local return_path   = "../../../../"
+
+    os.mkdir( dependency_path )
+    os.chdir( dependency_path )
+    print( "Building " .. dependency .. " files..." )
+    os.execute( "cmake " .. return_path .. "External/" .. dependency )
+    print( "Build done.\n" )
+    os.chdir( return_path )
+end
+
+local root_build_dir = "./Build/Project/"
 
 workspace "QWarp Playground"
     configurations { "Debug", "Release", "Final" }
-    platforms { get_platforms() } -- Could allow me to use platforms as settings?
+    platforms { Supported_Platforms() } -- Could allow me to use platforms as settings?
     startproject "Startup"
 
     defines {
         "LODEPNG_NO_COMPILE_ALLOCATORS",
-        "QW_CORE_ID=" .. tostring( get_core_id() )
     }
 
     files { "visualizers/*.natvis" }
 
-    setup_workspace()
-
-filter { "platforms:x64" }
-    defines {
-        "QW_TARGET_WIN64",
-        "QW_GRAPHICS_TBD",
-    }
-    architecture "x86_64"
+    Setup_Workspace()
 
 filter { "configurations:Debug" }
     defines {
@@ -57,84 +67,51 @@ group "Game"
 
 project "Framework"
     kind "StaticLib"
-    location "build/framework"
+    location( root_build_dir .. "framework" )
     language "C++"
     targetdir "bin/Framework"
 
     files { "src/framework/**.hpp", "src/framework/**.cpp", "src/framework/**.h" }
 
-    links { "Engine", "Core" }
+    links { "Engine" }
     
-    includedirs { "src/engine", "src/framework", platform_src(), "external/fastgltf/include", "src/base" }
+    includedirs { "src/engine", "src/framework", "external/fastgltf/include", "src/base" }
 
 project "Startup"
     kind "WindowedApp"
-    location "build/startup"
+    location( root_build_dir .. "startup" )
     language "C++"
     targetdir "game/bin"
 
-    links { "Engine", "Framework", "Core" }
+    links { "Engine", "Framework" }
 
     files { "src/startup/main.cpp" }
 
-    includedirs { "src/engine", "src/framework", platform_src(), "external/fastgltf/include", "external/lodepng", "src/base" }
+    includedirs { "src/engine", "src/framework", "external/fastgltf/include", "external/lodepng" }
 
 group "QWarp"
 
 project "Engine"
     kind "StaticLib"
-    location "build/engine"
+    location( root_build_dir .. "engine" )
     language "C++"
-    targetdir "bin/QWarp" 
+    targetdir "bin/Engine" 
 
-    links { "Shaders", "fastgltf", "lodepng", "Core" }
+    links { "fastgltf", "lodepng" }
 
     files { "src/engine/**.hpp", "src/engine/**.cpp", "src/engine/**.h" }
 
-    includedirs { "src/engine", platform_src(), "external/fastgltf/include", "external/lodepng", "src/base" }
+    includedirs { "src/engine", "external/fastgltf/include", "external/lodepng" }
 
+group "Modules"
 
-project "Base"
-    kind "None"
-    location "build/base"
-    language "C++"
-
-    files( "src/base/**" )
-
-    includedirs { platform_src(), "src/engine", "src/base" }
-
-project "Core"
-    kind "StaticLib"
-    location "build/core"
-    language "C++"
-    targetdir "bin/Core" 
-
-    links { "Shaders", "fastgltf", "lodepng" }
-
-    files( get_source_paths() )
-
-    includedirs { platform_src(), "external/fastgltf/include", "external/lodepng", "src/base" } 
-
-project "Shaders"
-    kind "StaticLib"
-    location "build/shaders"
-    language "C++"
-    targetdir "bin/Shaders"
-
-    files( shader_src() )
-
-os.mkdir( "./build/fastgltf" )
-os.chdir( "./build/fastgltf" )
-print( "Building fastgltf files...\n" )
-os.execute( "cmake ../../external/fastgltf" )
-print( "\nBuild done." )
-os.chdir( "../.." )
+CMakeBuilder( "fastgltf" )
 
 group "Dependencies"
 
 project "fastgltf"
     kind "StaticLib"
-    location "build/external/fastgltf"
+    location "Build/External/fastgltf"
     language "C++"
     targetdir "bin/external"
 
@@ -144,7 +121,7 @@ project "fastgltf"
     
 project "lodepng"
     kind "StaticLib"
-    location "build/external/lodepng"
+    location "Build/External/lodepng"
     language "C++"
     targetdir "bin/external"
     
