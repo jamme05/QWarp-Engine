@@ -11,18 +11,16 @@ function DefaultModuleFiles( basepath, types )
     return files
 end
 
-function Default_Plugin_Setup( plugin_name )
-    return function()
-    project( plugin_name )
+function Default_Plugin_Setup( name, path )
+    project( name )
         kind( plugin_kind )
-        location( "Build/Plugin/" .. plugin_name )
+        location( "Build/Plugin/" .. name )
         language "C++"
-        targetdir( "bin/Plugin/" .. plugin_name )
+        targetdir( "bin/Plugin/" .. name )
     
-        files { DefaultModuleFiles( "Modules/" .. plugin_name .. "/src/", { ".hpp", ".h", ".cpp" } ) }
+        files { DefaultModuleFiles( "Modules/" .. path .. "/src/", { ".hpp", ".h", ".cpp" } ) }
         
         includedirs { "src/engine" }
-    end
 end
 
 function Load_Module( plugin_path )
@@ -34,6 +32,9 @@ function Load_Module( plugin_path )
         return
     end
     
+    include( module_dir .. "/" .. build_file )
+    module.Raw = module_json
+    module.Dir = partial_module.Dir
     table.insert( modules, module )
 end
 
@@ -57,11 +58,7 @@ function Load_Modules()
     ValidateModules()
 end
 
-function Supported_Platforms()
-    return "Win64"
-end
-
-function ForeachModule( run )
+function ForeachPlugin( run )
     if modules == nil then
         return
     end
@@ -71,10 +68,6 @@ function ForeachModule( run )
     end
 end
 
-function Setup_Workspace()
-    ForeachModule( function( mod ) mod.Setup_Workspace() end )
-end
-
 function CreateModules()
-    ForeachModule( function( mod ) mod.Module_Project() end )
+    ForeachPlugin( function( p ) Default_Plugin_Setup( p.Name, p.Dir ) end )
 end

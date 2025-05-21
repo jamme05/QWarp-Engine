@@ -1,5 +1,11 @@
 {
     "Name"    : "QWarp Playground",
     "Version" : "0.0.1",
-    "Engine"  : "QWarp-0.0.1"
+    "Engine"  : "QWarp-0.0.1",
+    "Plugins" : [
+        {
+            "Id"  : "a9cd9571-2aa2-4d2a-9dc7-adefc0597085",
+            "Dir" : "Jolt"
+        }
+    ]
 }
