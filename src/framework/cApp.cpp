@@ -27,10 +27,10 @@
 #include "Graphics/cWindow_context.h"
 
 #include "Containers/allocator.h"
-#include "Misc/string_manipulation.h"
+#include "Containers/Const/string.h"
 
-#include "Runtime/cRuntimeClass.h"
-#include "Runtime/cRuntimeStruct.h"
+#include "Reflection/cRuntimeClass.h"
+#include "Reflection/cRuntimeStruct.h"
 
 cApp::cApp( void )
 : iListener( qw::Input::eType::kAll, 10, true )

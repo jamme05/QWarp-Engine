@@ -1,18 +1,12 @@
 
-local module = {
+module = {
+    Name = "Windows",
     Setup_Workspace = function()
-        defines { "QW_TARGET_WIN64" }
-    end
+        cppdialect( "c++20" ) -- Add something like Maximum Cpp version/dialect?
 
-    Module_Project = function()
-        kind "StaticLib"
-        location( "Build/Module/Win64" )
-        language "C++"
-        targetdir "bin/Module/Win64"
-    
-        files { "Modules/Win64/**.hpp", "Modules/Win64/**.cpp", "Modules/Win64/**.h" }
-        
-        includedirs { "src/engine" }
-    
-    end
+        -- May remove QW_CPP20 later.
+        defines( { "QW_TARGET_WIN64", "QW_CPP20" } )
+    end,
+
+    Module_Project = Default_Module_Setup( "Windows" )
 }

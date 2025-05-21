@@ -6,6 +6,8 @@ premake.override( path, "getDefaultSeparator", function( base )
 	end
 end )
 
+plugin_kind = "SharedLib" -- When making a game build use StaticLib.
+
 include( "./utils/Module_Manager.lua" )
 
 -- Return to root dir.
@@ -15,13 +17,13 @@ Load_Modules()
 
 -- TODO: Move to external file.
 function CMakeBuilder( dependency )
-    local dependency_path = "./Build/External/" .. dependency .. "/CMAKE"
+    local dependency_path = "./Build/" .. dependency .. "/CMAKE"
     local return_path   = "../../../../"
 
     os.mkdir( dependency_path )
     os.chdir( dependency_path )
     print( "Building " .. dependency .. " files..." )
-    os.execute( "cmake " .. return_path .. "External/" .. dependency )
+    os.execute( "cmake " .. return_path .. dependency )
     print( "Build done.\n" )
     os.chdir( return_path )
 end
@@ -30,7 +32,7 @@ local root_build_dir = "./Build/Project/"
 
 workspace "QWarp Playground"
     configurations { "Debug", "Release", "Final" }
-    platforms { Supported_Platforms() } -- Could allow me to use platforms as settings?
+    platforms { Get_Supported_Platforms() } -- Could allow me to use platforms as settings?
     startproject "Startup"
 
     defines {
@@ -97,7 +99,7 @@ project "Engine"
     language "C++"
     targetdir "bin/Engine" 
 
-    links { "fastgltf", "lodepng" }
+    links { "fastgltf", "lodepng", Get_Module_Links() }
 
     files { "src/engine/**.hpp", "src/engine/**.cpp", "src/engine/**.h" }
 
@@ -105,10 +107,11 @@ project "Engine"
 
 group "Modules"
 
-CMakeBuilder( "fastgltf" )
+CreateModules()
 
 group "Dependencies"
 
+CMakeBuilder( "External/fastgltf" )
 project "fastgltf"
     kind "StaticLib"
     location "Build/External/fastgltf"

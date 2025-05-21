@@ -26,6 +26,8 @@
 #define UNWRAP_PACK( ... ) __VA_ARGS__
 #define UNWRAP( Pack ) UNWRAP_ ## Pack
 
+#define M_CLASS( Class ) CONCAT( c, Class )
+
 #if defined( IN_EDITOR )
 // Selects B in editor and A in runtime
 #define PLACEHOLDER( A, B ) B

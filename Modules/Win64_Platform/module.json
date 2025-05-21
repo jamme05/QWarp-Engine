@@ -3,7 +3,8 @@
     "Description" : "Gives QWarp Windows (10/11) support.",
     "Id"          : "c895cc22-aa64-46d2-badc-2a4c233b0989",
     "Version"     : "0.0.1",
-    "BuildTool"   : "Build.lua",
+    "BuildFile"   : "Build.lua",
+    "Type"        : "Platform",
     "Supports"    : {
         "Engine" : "QWarp-0.0.1",
         "Platforms" : [
@@ -13,7 +14,6 @@
     "Dependencies" : [
         {
             "Type"     : "Graphics",
-            "Optional" : false,
             "Id"       : ""
         }
     ]

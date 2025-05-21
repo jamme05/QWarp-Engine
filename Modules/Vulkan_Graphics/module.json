@@ -3,22 +3,24 @@
     "Description" : "Gives QWarp Vulkan support.",
     "Id"          : "c895cc22-aa64-46d2-badc-2a4c233b0989",
     "Version"     : "0.0.1",
+    "Type"        : "Graphics",
     "Supports"    : {
         "Engine" : "QWarp-0.0.1",
         "Platforms" : [
-            "Win64"
+            "Win64",
+            "Android"
         ]
     },
     "Dependencies" : [
         {
-            "Type"     : "Platform",
-            "Optional" : true,
-            "Id"       : "c895cc22-aa64-46d2-badc-2a4c233b0989"
+            "Type"  : "Platform",
+            "Group" : 0,
+            "Id"    : "c895cc22-aa64-46d2-badc-2a4c233b0989"
         },
         {
-            "Type"     : "Platform",
-            "Optional" : true,
-            "Id"       : "[placeholder for t.ex android]"
+            "Type"  : "Platform",
+            "Group" : 0,
+            "Id"    : "[placeholder for t.ex android]"
         }
     ]
 }
