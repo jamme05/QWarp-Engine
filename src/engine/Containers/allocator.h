@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "Memory/Memory.h"
+#include "Memory/Tracker/cTracker.h"
 
 namespace qw
 {
@@ -64,7 +64,7 @@ namespace qw
 
 		size_type max_size( void ) const
 		{
-			return MAX_HEAP_SIZE / sizeof( Ty );
+			return Memory::Tracker::max_heap_size() / sizeof( Ty );
 		} // max_size
 
 	};

@@ -11,7 +11,7 @@
 #include "for_each.h"
 #include "manipulation.h"
 
-#include <Containers/const_map.h>
+#include <Containers/Const/const_map.h>
 
 #define TYPE_ENUM_2( Name, Type ) internal_ ## Name : Type
 #define TYPE_ENUM_1( Name ) internal_ ## Name : uint8_t
@@ -172,7 +172,7 @@ constexpr int get_safe_enum_value( const int _value ){ return _value; };
 **/
 #define MAKE_ENUM( Type, ... ) \
 	MAKE_UNREFLECTED_ENUM( Type, __VA_ARGS__ )
-	REGISTER_ENUM(  )
+	REGISTER_ENUM( Type )
 
 template< class ETy, class Ty, class... Args >
 constexpr Ty enum_value_creator( ETy _value, const char* _name, const char* _display_name, Args... )
@@ -209,15 +209,6 @@ constexpr Ty enum_value_creator( ETy _value, const char* _name, const int )
 {
 	return { _value, _name, _name, _name }; // Forward in case of future changes.
 } // enum_value_creator
-
-namespace qw::runtime_enum
-{
-	struct sValueInfo
-	{
-		str_hash    name_hash; // Original name shouldn't be required to be accessed?
-		const char* display_name;
-	};
-} // qw::runtime_enum::
 
 MAKE_UNREFLECTED_ENUM( ENUM( eExample1 ),
 	E( kValueEx, 0x00 ),

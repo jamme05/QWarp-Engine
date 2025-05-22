@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "Types/types.h"
-
 #include "cVector.h"
 
 #include "VectorSwizzle.h"

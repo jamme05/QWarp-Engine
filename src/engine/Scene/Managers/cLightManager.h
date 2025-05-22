@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <Types/types.h>
-
 #include "Misc/cSingleton.h"
 
 namespace qw

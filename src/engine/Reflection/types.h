@@ -7,8 +7,8 @@
 #pragma once
 
 #include "Misc/Hashing.h"
-#include "Misc/string_manipulation.h"
-#include "Containers/const_map.h"
+#include "Containers/Const/string.h"
+#include "Containers/Const/array.h"
 
 #include <Macros/manipulation.h>
 

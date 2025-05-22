@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <xmmintrin.h>
+#include <emmintrin.h>
 
 #define MakeShuffleMask(x,y,z,w)           (x | (y<<2) | (z<<4) | (w<<6))
 

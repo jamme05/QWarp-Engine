@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Memory/cInternal.h"
+#include "Memory/Memory.h"
 #include "Misc/cSingleton.h"
 
 #include <unordered_set>

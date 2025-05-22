@@ -6,14 +6,15 @@
 
 #pragma once
 
-#include <pmmintrin.h>
 
 #include "cMatrix.h"
 
 #include "cVector3.h"
 #include "cVector4.h"
 
+#include <pmmintrin.h>
 #include "Matrix_helper.h"
+
 
 namespace qw
 {
@@ -25,10 +26,15 @@ namespace qw
 	template <typename T> class cMatrix<4, 4, T>
 	{
 	public:
-		union{ cVector4<T> x = { T(1) , T(0) , T(0) , T(0) }, right;    };
-		union{ cVector4<T> y = { T(0) , T(1) , T(0) , T(0) }, up;       };
-		union{ cVector4<T> z = { T(0) , T(0) , T(1) , T(0) }, front;    };
-		union{ cVector4<T> w = { T(0) , T(0) , T(0) , T(1) }, position; };
+		cVector4<T> x = { T(1) , T(0) , T(0) , T(0) }; // Right 
+		cVector4<T> y = { T(0) , T(1) , T(0) , T(0) }; // Up
+		cVector4<T> z = { T(0) , T(0) , T(1) , T(0) }; // Front 
+		cVector4<T> w = { T(0) , T(0) , T(0) , T(1) }; // Position
+
+		constexpr auto& right( void ) const { return x; } // Right 
+		constexpr auto& up   ( void ) const { return y; } // Up
+		constexpr auto& front( void ) const { return z; } // Front 
+		constexpr auto& pos  ( void ) const { return w; } // Position
 
 		// Default constructor
 		cMatrix() = default;

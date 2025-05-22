@@ -5,6 +5,7 @@
  */
 
 #pragma once
+
 #include "cMatrix4x4.h"
 
 namespace qw
@@ -12,7 +13,7 @@ namespace qw
 	class cTransform
 	{
 	public:
-		constexpr cTransform( const cVector3f& _position = kZero, const cVector3f& _rotation = kZero, const cVector3f& _scale = kOne )
+		cTransform( const cVector3f& _position = kZero, const cVector3f& _rotation = kZero, const cVector3f& _scale = kOne )
 		: m_position( _position )
 		, m_rotation( _rotation )
 		, m_scale   ( _scale )
@@ -31,19 +32,19 @@ namespace qw
 
 		constexpr auto& getLocal( void ) const { return m_local; }
 
-		auto& getLocalFront( void ) const { return reinterpret_cast< const cVector3f& >( m_local.front ); }
-		auto& getLocalRight( void ) const { return reinterpret_cast< const cVector3f& >( m_local.right ); }
-		auto& getLocalUp   ( void ) const { return reinterpret_cast< const cVector3f& >( m_local.up ); }
+		auto& getLocalFront( void ) const { return reinterpret_cast< const cVector3f& >( m_local.z ); }
+		auto& getLocalRight( void ) const { return reinterpret_cast< const cVector3f& >( m_local.x ); }
+		auto& getLocalUp   ( void ) const { return reinterpret_cast< const cVector3f& >( m_local.y ); }
 
-		auto& getLocalPosition( void ) const { return reinterpret_cast< const cVector3f& >( m_local.position ); }
+		auto& getLocalPosition( void ) const { return reinterpret_cast< const cVector3f& >( m_local.w ); }
 
 		constexpr auto& getWorld( void ) const { return m_world; }
 
-		auto& getWorldFront( void ) const { return reinterpret_cast< const cVector3f& >( m_world.front ); }
-		auto& getWorldRight( void ) const { return reinterpret_cast< const cVector3f& >( m_world.right ); }
-		auto& getWorldUp   ( void ) const { return reinterpret_cast< const cVector3f& >( m_world.up ); }
+		auto& getWorldFront( void ) const { return reinterpret_cast< const cVector3f& >( m_world.z ); }
+		auto& getWorldRight( void ) const { return reinterpret_cast< const cVector3f& >( m_world.x ); }
+		auto& getWorldUp   ( void ) const { return reinterpret_cast< const cVector3f& >( m_world.y ); }
 
-		auto& getWorldPosition( void ) const { return reinterpret_cast< const cVector3f& >( m_world.position ); }
+		auto& getWorldPosition( void ) const { return reinterpret_cast< const cVector3f& >( m_world.w ); }
 
 		void setParent( const cTransform& _parent ){ m_parent = &_parent; }
 		void setParent( const cTransform* _parent ){ m_parent =  _parent; }

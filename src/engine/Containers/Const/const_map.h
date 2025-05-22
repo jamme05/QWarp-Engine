@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include "Containers/array.h"
+// TODO: Use forward declare instead?
+#include "Containers/Const/array.h"
 #include "Misc/Hashing.h"
 
 namespace qw

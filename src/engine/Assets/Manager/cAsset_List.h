@@ -6,12 +6,10 @@
 
 #pragma once
 
-#include "Assets/cTexture.h"
 #include "Assets/iAsset.h"
 #include "Misc/Smart_ptrs.h"
 
 #include "fastgltf/core.hpp"
-#include "Types/vertex.h"
 
 #include "map"
 

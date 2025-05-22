@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "Types/system_types.h"
-
 #include <queue>
 
 #include "Math/cVector2.h"

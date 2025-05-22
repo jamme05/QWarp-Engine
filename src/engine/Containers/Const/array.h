@@ -11,27 +11,6 @@
 
 namespace qw
 {
-    template< class Ty >
-    class array_ref;
-
-    struct array_base
-    {
-        constexpr array_base( void ) = default;
-        constexpr array_base( const array_base& ) = default;
-        constexpr array_base( array_base&& ) = default;
-        constexpr array_base& operator=( const array_base& ) = default;
-        constexpr array_base& operator=( array_base&& ) = default;
-        virtual constexpr ~array_base( void ) = default;
-    protected:
-        virtual constexpr const void* _get  ( void ) const = 0;
-        virtual constexpr       void* _get  ( void )       = 0;
-    public:
-        virtual constexpr size_t size( void ) const = 0;
-
-        template< class Ty >
-        friend class array_ref;
-    };
-
     template< class Ty, size_t Size >
     struct array
     {
@@ -84,7 +63,7 @@ namespace qw
     };
 
     template< class Ty >
-    struct array< Ty, 0 > : array_base
+    struct array< Ty, 0 >
     {
         typedef Ty value_type;
         constexpr static auto array_size = 0;
@@ -96,7 +75,7 @@ namespace qw
         constexpr auto end  ( void ) const { return get(); }
         constexpr auto end  ( void )       { return get(); }
 
-        constexpr auto get  ( void ) const { return nullptr; }
+        constexpr Ty* get  ( void ) const { return nullptr; }
 
         template< size_t Size2 >
         constexpr array< Ty, Size2 > operator+( const array< Ty, Size2 >& _other ) const
@@ -106,10 +85,7 @@ namespace qw
             return result;
         }
 
-        constexpr const void* _get( void ) const override { return nullptr; }
-        constexpr       void* _get( void )       override { return nullptr; }
-
-        constexpr size_t size( void ) const override { return array_size; }
+        constexpr size_t size( void ) const { return array_size; }
     };
 
     template< class Ty >

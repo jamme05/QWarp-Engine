@@ -13,6 +13,7 @@
 
 #include <Misc/Hashing.h>
 #include "Misc/cSingleton.h"
+#include "Misc/print.h"
 #include "Misc/Smart_ptrs.h"
 
 namespace qw
@@ -299,7 +300,7 @@ namespace qw
 
 		if( itr->second->get_arg_size() != 0 )
 		{
-			printf( "Invalid size of arguments., %lu \n", itr->second->get_arg_size() );
+			printf( "Invalid size of arguments., %lu \n", TO_LU( itr->second->get_arg_size() ) );
 			return false;
 		}
 
