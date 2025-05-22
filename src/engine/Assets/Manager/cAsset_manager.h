@@ -13,11 +13,8 @@
 #include "Assets/iAsset.h"
 #include "Misc/cSingleton.h"
 #include "Misc/Smart_ptrs.h"
-#include "Types/types.h"
 
 #include "fastgltf/core.hpp"
-#include "Graphics/cDynamic_buffer.h"
-#include "Types/vertex.h"
 
 namespace qw
 {
@@ -39,7 +36,7 @@ namespace qw
 			return nullptr;
 		} // getAsset
 
-		template< class Ty = Assets::cTexture, class... Args >
+		template< class Ty, class... Args >
 		requires std::is_base_of_v< iAsset, Ty >
 		cShared_ptr< Ty > createAsset( Args... _args ) // TODO: Add &&
 		{

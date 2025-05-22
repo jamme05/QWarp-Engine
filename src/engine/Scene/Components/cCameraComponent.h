@@ -7,9 +7,7 @@
 #pragma once
 
 #include "iComponent.h"
-#include "Graphics/cRender_context.h"
 #include "Math/cMatrix4x4.h"
-#include "Types/graphics_types.h"
 
 namespace qw::Scene
 {

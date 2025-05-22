@@ -17,12 +17,8 @@
 
 namespace qw
 {
-	template <typename T> using cMatrix4x4 = cMatrix<4, 4, T>;
-
-	typedef cMatrix4x4<float>	cMatrix4x4f;
-	typedef cMatrix4x4<double>	cMatrix4x4d;
-
-	template <typename T> class cMatrix<4, 4, T>
+	template <typename T>
+	class cMatrix<4, 4, T>
 	{
 	public:
 		union{ cVector4<T> x = { T(1) , T(0) , T(0) , T(0) }, right;    };
@@ -54,7 +50,7 @@ namespace qw
 		constexpr cMatrix& operator= (       cMatrix&& _m ) noexcept { x = _m.x; y = _m.y; z = _m.z; w = _m.w; return *this; }
 
 		template< class Ty2 >
-		constexpr cMatrix& operator= ( const cMatrix4x4< Ty2 >&  _m ){ x = _m.x; y = _m.y; z = _m.z; w = _m.w; return *this; }
+		constexpr cMatrix& operator= ( const cMatrix< 4, 4, Ty2 >&  _m ){ x = _m.x; y = _m.y; z = _m.z; w = _m.w; return *this; }
 
 		constexpr cMatrix& operator+=(const cMatrix& _m){ x += _m.x; y += _m.y; z += _m.z; w += _m.w; return *this; }
 		constexpr cMatrix& operator-=(const cMatrix& _m){ x -= _m.x; y -= _m.y; z -= _m.z; w -= _m.w; return *this; }
@@ -193,7 +189,7 @@ namespace qw
 
 		auto inversed_fast( void )
 		{
-			cMatrix4x4f out;
+			cMatrix< 4, 4, float > out;
 			if constexpr( std::is_same_v< T, float > )
 				inversed_fast( *this, out );
 			else
@@ -205,18 +201,18 @@ namespace qw
 			return out;
 		} // inversed_fast
 
-		void inversed_fast( cMatrix4x4f& _out ) const
+		void inversed_fast( cMatrix< 4, 4, float >& _out ) const
 		{
 			if constexpr( std::is_same_v< T, float > )
 				inversed_fast( *this, _out );
 			else
 			{
-				const cMatrix4x4f in = *this;
+				const cMatrix< 4, 4, float > in = *this;
 				inversed_fast( in, _out );
 			}
 		} // inversed_fast
 
-		static void inversed_fast( const cMatrix4x4f& _in, cMatrix4x4f& _out )
+		static void inversed_fast( const cMatrix< 4, 4, float >& _in, cMatrix< 4, 4, float >& _out )
 		{
 			const auto as_m  = reinterpret_cast< const __m64* >( &_in );
 			__m64*     out_m = reinterpret_cast<       __m64* >( &_out );
@@ -337,6 +333,12 @@ namespace qw
 			_mm_storeh_pi( out_m + 7, minor3 );
 		} // inverse_fast
 	};
+
+	
+	template <typename T> using cMatrix4x4 = cMatrix<4, 4, T>;
+
+	typedef cMatrix4x4<float>	cMatrix4x4f;
+	typedef cMatrix4x4<double>	cMatrix4x4d;
 
 	namespace Matrix4x4
 	{
