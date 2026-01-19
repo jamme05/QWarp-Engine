@@ -9,15 +9,12 @@ function CmakePreBuild( dependency, cmake_path, settings )
     os.mkdir( dependency_path )
     os.chdir( dependency_path )
     print( "Building " .. dependency .. " files..." )
-    os.execute( "cmake " .. path.join( return_path, dependency, cmake_path ) )
-    if( build_config ~= nil ) then
-        os.execute( "cmake " .. settings .. "-B build" )
-    end
+    os.execute( "cmake " .. path.join( return_path, dependency, cmake_path ) .. " " .. settings )
     print( "Build done.\n" )
     os.chdir( return_path )
 
 end
-function CMakeBuilder( dependency, cmake_path, build_config )
+function CMakeBuilder( dependency, cmake_path, build_config, settings )
     local dependency_path = "./Build/" .. dependency .. "/cmake"
     local return_path   = os.realpath( "./" )
 
@@ -25,10 +22,14 @@ function CMakeBuilder( dependency, cmake_path, build_config )
         cmake_path = ""
     end
 
+    if( settings == nil ) then
+        settings = ""
+    end
+
     os.mkdir( dependency_path )
     os.chdir( dependency_path )
     print( "Building " .. dependency .. " files..." )
-    os.execute( "cmake " .. path.join( return_path, dependency, cmake_path ) )
+    os.execute( "cmake " .. path.join( return_path, dependency, cmake_path ) .. " " .. settings )
     if( build_config ~= nil ) then
         os.execute( "cmake --build . --config " .. build_config )
     end
