@@ -1,7 +1,8 @@
 local jolt_dir = "JoltPhysics"
-local jolt_include_dir = path.join( jolt_dir, "Jolt" )
+local jolt_include_dir = jolt_dir
 local jolt_asset_dir = path.join( jolt_dir, "Assets" )
 local jolt_build_dir = "Build/Plugins/JoltPhysics/JoltPhysics/cmake/Release/"
+local jolt_build_settings = "-DOBJECT_LAYER_BITS=32"
 
 plugin = {
     Name = "Jolt Physics",
@@ -11,7 +12,7 @@ plugin = {
     end,
 
     Init = function( plugin_dir )
-        CMakeBuilder( path.join( plugin_dir, jolt_dir ), "Build", "Release" )
+        CMakeBuilder( path.join( plugin_dir, jolt_dir ), "Build", "Release", jolt_build_settings )
 
         CopyFolder( path.join( plugin_dir, jolt_asset_dir ), path.join( jolt_build_dir, "Assets" ) )
     end,
