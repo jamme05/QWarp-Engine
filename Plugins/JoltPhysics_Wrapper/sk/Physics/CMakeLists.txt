@@ -1,5 +1,5 @@
 
-target_sources(JoltPhysics
+target_sources(JoltPhysics_Wrapper
 	PRIVATE
     Physics_Manager.cpp
 

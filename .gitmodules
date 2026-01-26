@@ -16,6 +16,6 @@
 [submodule "external/imgui"]
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "Plugins/JoltPhysics/JoltPhysics"]
-	path = Plugins/JoltPhysics/JoltPhysics
+[submodule "Plugins/JoltPhysics_Wrapper/JoltPhysics"]
+	path = Plugins/JoltPhysics_Wrapper/JoltPhysics
 	url = https://github.com/jrouwe/JoltPhysics.git
