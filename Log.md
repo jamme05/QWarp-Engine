@@ -59,6 +59,11 @@ Day 5:
 
 ---
 
+Extra Day 1( 7/2 ):
+- Continued previously left work with trying to get Jolt integrated into my engine. This will be important for later as I'm currently unable to linecast.
+
+---
+
 Day 6:
 - Started fixing the serialization system I had begun before this assignment.
 - Realized I was unable to get my own runtime type info from reflected class instances. So I fixed it.
