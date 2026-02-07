@@ -216,7 +216,7 @@ namespace sk::Object::Component
 SK_DECLARE_CLASS( sk::Object::Component )
 
 #define COMPONENT_PARENT_CLASS( ComponentName, ... ) sk::Object::iComponent
-#define COMPONENT_PARENT_VALIDATOR( ComponentName, ... ) std::is_base_of< sk::Object::iComponent, __VA_ARGS__ >
+#define COMPONENT_PARENT_VALIDATOR( ComponentName, ... ) std::is_base_of_v< sk::Object::iComponent, __VA_ARGS__ >
 #define COMPONENT_PARENT_CREATOR_2( ComponentName, ... ) AFTER_FIRST( __VA_ARGS__ )
 #define COMPONENT_PARENT_CREATOR_1( ComponentName, ... ) sk::Object::cComponent< M_CLASS( ComponentName ), sk::Object::kAll >
 #define COMPONENT_PARENT_CREATOR( ComponentName, ... ) CONCAT( COMPONENT_PARENT_CREATOR_, VARGS( __VA_ARGS__ ) ) ( ComponentName, __VA_ARGS__ )
