@@ -17,6 +17,8 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 
+#include "sk/Platform/Time.h"
+
 using namespace sk::Physics;
 
 static void TraceImpl(const char *inFMT, ...)
@@ -201,15 +203,49 @@ cPhysics_Manager::cPhysics_Manager( const uint8_t _threads )
 
     JPH::RegisterTypes();
 
-    JPH::TempAllocatorImpl temp_allocator( 10llu * 1024llu * 1024llu );
+	m_job_system_ = std::make_unique< JPH::JobSystemThreadPool >( JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, _threads );
+    auto& job_system = *m_job_system_;
 
-    JPH::JobSystemThreadPool job_system( JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, _threads );
+	BPLayerInterfaceImpl broad_phase_layer_interface;
+	ObjectVsBroadPhaseLayerFilterImpl object_vs_broad_phase_layer_filter;
+	ObjectLayerPairFilterImpl object_layer_pair_filter;
 
-    JPH::PhysicsSystem physics_system;
-    // physics_system.Init(  )
+	m_physics_system_ = std::make_unique< JPH::PhysicsSystem >();
+	auto& physics_system = *m_physics_system_;
+	physics_system.Init( 65536, 0, 65536, 10240, broad_phase_layer_interface, object_vs_broad_phase_layer_filter, object_layer_pair_filter );
+
+	MyBodyActivationListener body_activation_listener;
+	physics_system.SetBodyActivationListener( &body_activation_listener );
+
+	MyContactListener contact_listener;
+	physics_system.SetContactListener( &contact_listener );
+
+	JPH::BodyInterface &body_interface = physics_system.GetBodyInterface();
 }
 
 cPhysics_Manager::~cPhysics_Manager()
 {
-    
+
+}
+
+void cPhysics_Manager::Update()
+{
+    static JPH::TempAllocatorImpl temp_allocator( 10llu * 1024llu * 1024llu );
+
+	auto& physics_system = *m_physics_system_;
+
+	if( !m_queued_body_ids_.empty() && sk::Time::Frame % 120 )
+	{
+		JPH::BodyInterface& body_interface = physics_system.GetBodyInterface();
+		const auto state = body_interface.AddBodiesPrepare( m_queued_body_ids_.data(), m_queued_body_ids_.size() );
+		body_interface.AddBodiesFinalize( m_queued_body_ids_.data(), m_queued_body_ids_.size(), state, JPH::EActivation::Activate );
+
+		//body_interface.SetUserData()
+		body_interface.ActivateBody()
+
+		physics_system.OptimizeBroadPhase();
+	}
+
+	physics_system.Update( sk::Time::Delta, 1, &temp_allocator, m_job_system_.get() );
+	physics_system.
 }
