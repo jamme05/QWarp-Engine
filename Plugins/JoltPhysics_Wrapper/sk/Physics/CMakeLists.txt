@@ -9,3 +9,5 @@ target_sources(JoltPhysics_Wrapper
     FILES
       Physics_Manager.cpp
 )
+
+add_subdirectory(Components)
