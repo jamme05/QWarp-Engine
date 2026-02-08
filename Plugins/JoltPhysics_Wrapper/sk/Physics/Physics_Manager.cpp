@@ -2,22 +2,25 @@
 
 #include "Physics_Manager.h"
 
+#include <sk/Platform/Time.h>
+
+#include <Jolt/RegisterTypes.h>
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/PhysicsSettings.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+
 #include <cstdarg>
 #include <iostream>
 
-#include <Jolt/Jolt.h>
-#include <Jolt/RegisterTypes.h>
-#include <Jolt/Core/Factory.h>
-#include <Jolt/Core/TempAllocator.h>
-#include <Jolt/Core/JobSystemThreadPool.h>
-#include <Jolt/Physics/PhysicsSettings.h>
-#include <Jolt/Physics/PhysicsSystem.h>
-#include <Jolt/Physics/Collision/Shape/BoxShape.h>
-#include <Jolt/Physics/Collision/Shape/SphereShape.h>
-#include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <Jolt/Physics/Body/BodyActivationListener.h>
-
-#include "sk/Platform/Time.h"
+#include "sk/Misc/Smart_Ptrs.h"
 
 using namespace sk::Physics;
 
@@ -177,20 +180,12 @@ public:
 	}
 };
 
-// An example activation listener
-class MyBodyActivationListener : public JPH::BodyActivationListener
+namespace
 {
-public:
-	void		OnBodyActivated(const JPH::BodyID &inBodyID, uint64_t inBodyUserData) override
-	{
-		std::cout << "A body got activated" << std::endl;
-	}
-
-	void		OnBodyDeactivated(const JPH::BodyID &inBodyID, uint64_t inBodyUserData) override
-	{
-		std::cout << "A body went to sleep" << std::endl;
-	}
-};
+	BPLayerInterfaceImpl              broad_phase_layer_interface;
+	ObjectVsBroadPhaseLayerFilterImpl object_vs_broad_phase_layer_filter;
+	ObjectLayerPairFilterImpl         object_layer_pair_filter;
+} // ::
 
 cPhysics_Manager::cPhysics_Manager( const uint8_t _threads )
 {
@@ -204,28 +199,28 @@ cPhysics_Manager::cPhysics_Manager( const uint8_t _threads )
     JPH::RegisterTypes();
 
 	m_job_system_ = std::make_unique< JPH::JobSystemThreadPool >( JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, _threads );
-    auto& job_system = *m_job_system_;
-
-	BPLayerInterfaceImpl broad_phase_layer_interface;
-	ObjectVsBroadPhaseLayerFilterImpl object_vs_broad_phase_layer_filter;
-	ObjectLayerPairFilterImpl object_layer_pair_filter;
 
 	m_physics_system_ = std::make_unique< JPH::PhysicsSystem >();
 	auto& physics_system = *m_physics_system_;
-	physics_system.Init( 65536, 0, 65536, 10240, broad_phase_layer_interface, object_vs_broad_phase_layer_filter, object_layer_pair_filter );
+	physics_system.Init(
+		65536, 0, 65536, 10240,
+		broad_phase_layer_interface, object_vs_broad_phase_layer_filter, object_layer_pair_filter
+	);
 
-	MyBodyActivationListener body_activation_listener;
-	physics_system.SetBodyActivationListener( &body_activation_listener );
+	physics_system.SetBodyActivationListener( this );
 
 	MyContactListener contact_listener;
 	physics_system.SetContactListener( &contact_listener );
-
-	JPH::BodyInterface &body_interface = physics_system.GetBodyInterface();
 }
 
 cPhysics_Manager::~cPhysics_Manager()
 {
+	m_physics_system_.reset();
 
+	JPH::UnregisterTypes();
+
+	delete JPH::Factory::sInstance;
+	JPH::Factory::sInstance = nullptr;
 }
 
 void cPhysics_Manager::Update()
@@ -238,14 +233,91 @@ void cPhysics_Manager::Update()
 	{
 		JPH::BodyInterface& body_interface = physics_system.GetBodyInterface();
 		const auto state = body_interface.AddBodiesPrepare( m_queued_body_ids_.data(), m_queued_body_ids_.size() );
-		body_interface.AddBodiesFinalize( m_queued_body_ids_.data(), m_queued_body_ids_.size(), state, JPH::EActivation::Activate );
-
-		//body_interface.SetUserData()
-		body_interface.ActivateBody()
+		body_interface.AddBodiesFinalize( m_queued_body_ids_.data(), m_queued_body_ids_.size(), state, JPH::EActivation::DontActivate );
 
 		physics_system.OptimizeBroadPhase();
+		m_queued_body_ids_.clear();
 	}
 
+	physics_system.GetNarrowPhaseQuery().CastRay();
+	physics_system.GetBroadPhaseQuery().CastRay();
 	physics_system.Update( sk::Time::Delta, 1, &temp_allocator, m_job_system_.get() );
-	physics_system.
+}
+
+void cPhysics_Manager::AddLayer( const cStringID& _name, uint8_t _layer )
+{
+
+}
+
+void cPhysics_Manager::RemoveLayer( uint8_t _layer )
+{
+
+}
+
+void cPhysics_Manager::OnBodyActivated( const JPH::BodyID& inBodyID, uint64_t inBodyUserData )
+{
+	auto& weak = reinterpret_cast< cWeak_Ptr< Components::cShapeComponent >& >( inBodyUserData );
+}
+
+void cPhysics_Manager::OnBodyDeactivated( const JPH::BodyID& inBodyID, uint64_t inBodyUserData )
+{
+	auto& weak = reinterpret_cast< cWeak_Ptr< Components::cShapeComponent >& >( inBodyUserData );
+}
+
+JPH::ValidateResult cPhysics_Manager::OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2,
+	JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult)
+{
+	return ContactListener::OnContactValidate( inBody1, inBody2, inBaseOffset, inCollisionResult );
+}
+
+void cPhysics_Manager::OnContactAdded( const JPH::Body& inBody1, const JPH::Body& inBody2,
+	const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings )
+{
+
+}
+
+void cPhysics_Manager::OnContactPersisted( const JPH::Body& inBody1, const JPH::Body& inBody2,
+	const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings )
+{
+
+}
+
+void cPhysics_Manager::OnContactRemoved( const JPH::SubShapeIDPair& inSubShapePair )
+{
+
+}
+
+bool cPhysics_Manager::ShouldCollide( JPH::ObjectLayer inLayer1, JPH::ObjectLayer inLayer2 ) const
+{
+
+}
+
+JPH::uint cPhysics_Manager::GetNumBroadPhaseLayers() const
+{
+
+}
+
+JPH::BroadPhaseLayer cPhysics_Manager::GetBroadPhaseLayer( JPH::ObjectLayer inLayer ) const
+{
+
+}
+
+const char* cPhysics_Manager::GetBroadPhaseLayerName( JPH::BroadPhaseLayer inLayer ) const
+{
+
+}
+
+bool cPhysics_Manager::ShouldCollide( JPH::ObjectLayer inLayer1, JPH::BroadPhaseLayer inLayer2 ) const
+{
+
+}
+
+void cPhysics_Manager::addBody( JPH::Body* _body )
+{
+
+}
+
+void cPhysics_Manager::removeBody( JPH::BodyID _body_id )
+{
+
 }

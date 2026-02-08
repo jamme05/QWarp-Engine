@@ -2,9 +2,10 @@ SkapePlugin(JoltPhysics_Wrapper)
 
 target_compile_definitions(JoltPhysics_Wrapper PUBLIC SK_PHYSICS_JOLT)
 
-add_subdirectory(JoltPhysics/Build EXCLUDE_FROM_ALL)
+# We want to use 32 bits.
+set(OBJECT_LAYER_BITS 32)
 
-message("Here!")
+add_subdirectory(JoltPhysics/Build EXCLUDE_FROM_ALL)
 
 target_link_libraries(JoltPhysics_Wrapper
 	PUBLIC
