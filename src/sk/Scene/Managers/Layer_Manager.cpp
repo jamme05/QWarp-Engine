@@ -118,11 +118,24 @@ void sk::Scene::cLayer_Manager::Unlock()
     m_access_mtx_.unlock();
 }
 
-auto sk::Scene::cLayer_Manager::GetLayerByName( const cStringID& _name ) const -> std::optional< uint64_t >
+auto sk::Scene::cLayer_Manager::GetLayerByName( const cStringID& _name ) const -> const sLayer*
 {
     if( const auto itr = m_name_to_layer_.find( _name.hash() ); itr != m_name_to_layer_.end() )
-        return itr->second;
-    return std::nullopt;
+        return &m_layers_[ itr->second ];
+    return nullptr;
+}
+
+auto sk::Scene::cLayer_Manager::GetLayerByValue( uint64_t _layer ) const -> const sLayer*
+{
+    SK_WARN_IF_RET( sk::Severity::kEngine, _layer >= m_layers_.size(),
+        TEXT( "Layer with value {} does not exist.", _layer ), nullptr )
+
+    auto& layer = m_layers_[ _layer ];
+
+    SK_WARN_IF_RET( sk::Severity::kEngine, layer.layer != ( 1 << _layer ),
+        TEXT( "Layer with value {} does not exist.", _layer ), nullptr )
+
+    return &layer;
 }
 
 auto sk::Scene::cLayer_Manager::GetObjectsIn( const uint64_t _layers ) const -> object_range_t

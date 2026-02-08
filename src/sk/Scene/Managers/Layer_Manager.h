@@ -231,9 +231,10 @@ namespace sk::Scene
         void Lock();
         void Unlock();
 
-        [[ nodiscard ]] auto  GetLayerByName( const cStringID& _name   ) const -> std::optional< uint64_t >;
-        [[ nodiscard ]] auto  GetObjectsIn  (       uint64_t   _layers ) const -> object_range_t;
-        [[ nodiscard ]] auto  GetMeshesIn   (       uint64_t   _layers ) const -> mesh_range_t;
+        [[ nodiscard ]] auto  GetLayerByName ( const cStringID& _name   ) const -> const sLayer*;
+        [[ nodiscard ]] auto  GetLayerByValue(       uint64_t   _layer  ) const -> const sLayer*;
+        [[ nodiscard ]] auto  GetObjectsIn   (       uint64_t   _layers ) const -> object_range_t;
+        [[ nodiscard ]] auto  GetMeshesIn    (       uint64_t   _layers ) const -> mesh_range_t;
 
         [[ nodiscard ]] auto& GetLayers() const { return m_layers_; }
 
