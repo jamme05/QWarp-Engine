@@ -135,7 +135,7 @@ void cEditor::Create()
 	auto mesh = scene->create_object< Object::cObject >( "Mesh Test 2" );
 	mesh->GetTransform().SetLocalPosition( { 0.0f, -16.0f, 90.0f } );
 	auto component = mesh->AddComponent< Object::Components::cMeshComponent >( christopher_m, mat1.first );
-	component->SetScale( cVector3f{ 100.0f } );
+	component->SetLocalScale( cVector3f{ 100.0f } );
 
 	mesh = scene->create_object< Object::cObject >( "Mesh Test 3" );
 	mesh->GetTransform().SetLocalPosition( { -0.1f, 0.0f, 2.5f } );
@@ -194,7 +194,7 @@ void cEditor::Create()
 			mesh_object->GetTransform().SetLocalPosition( { x * 2, 0.0f, y * 2 } );
 			auto spin = mesh_object->AddComponent< Object::Components::cSpinComponent >( cVector3f{ 0.0f, dis( gen ), 0.0f } );
 			auto mesh_component = mesh_object->AddComponent< Object::Components::cMeshComponent >( christopher_m, mat1.first );
-			mesh_component->SetRotation( { -90.0f, 0.0f, 0.0f } );
+			mesh_component->SetLocalRotation( { -90.0f, 0.0f, 0.0f } );
 			mesh_component->SetParent( spin );
 		}
 	}

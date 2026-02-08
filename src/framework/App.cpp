@@ -128,7 +128,7 @@ void cApp::create()
 	mesh->GetTransform().SetLocalPosition( { 0.0f, -16.0f, 90.0f } );
 	auto component = mesh->AddComponent< sk::Object::Components::cMeshComponent >( christopher_m, mat1.first );
 	component->enabled();
-	component->SetScale( sk::cVector3f{ 100.0f } );
+	component->SetLocalScale( sk::cVector3f{ 100.0f } );
 	
 		
 	auto mat2 = asset_m.CreateAsset< sk::Assets::cMaterial >( "Material Test 2", "materials/mat1.skmat2",
@@ -194,7 +194,7 @@ void cApp::create()
 			auto spin = mesh_object->AddComponent< sk::Object::Components::cSpinComponent >( sk::cVector3f{ 0.0f, dis( gen ), 0.0f } );
 			auto mesh_component = mesh_object->AddComponent< sk::Object::Components::cMeshComponent >( christopher_m, mat1.first );
 			mesh_component->enabled();
-			mesh_component->SetRotation( { -90.0f, 0.0f, 0.0f } );
+			mesh_component->SetLocalRotation( { -90.0f, 0.0f, 0.0f } );
 			mesh_component->SetParent( spin );
 		}
 	}

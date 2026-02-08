@@ -47,6 +47,7 @@ namespace sk::Object
 
 		~iComponent() override;
 
+		// TODO: Add OnCreate and OnDestroy
 		// TODO: Make them protected
 		// Event bases
 		virtual void update      (){}
@@ -65,26 +66,34 @@ namespace sk::Object
 		virtual void PostEvent( uint16_t _event ) = 0;
 
 		[[ nodiscard ]]
-		auto& GetPosition()       { return m_transform_->GetLocalPosition(); }
+		auto& GetPosition()       { return m_transform_->GetPosition(); }
 		[[ nodiscard ]]
-		auto& GetPosition() const { return m_transform_->GetLocalPosition(); }
-		void  SetPosition( const cVector3f& _position ){ m_transform_->SetLocalPosition( _position ); }
+		auto& GetPosition() const { return m_transform_->GetPosition(); }
 
 		[[ nodiscard ]]
-		auto& GetRotation()       { return m_transform_->GetLocalRotation(); }
+		auto& GetLocalPosition()       { return m_transform_->GetLocalPosition(); }
 		[[ nodiscard ]]
-		auto& GetRotation() const { return m_transform_->GetLocalRotation(); }
-		void  SetRotation( const cVector3f& _rotation ){ m_transform_->SetLocalRotation( _rotation ); }
+		auto& GetLocalPosition() const { return m_transform_->GetLocalPosition(); }
+		void  SetLocalPosition( const cVector3f& _position ){ m_transform_->SetLocalPosition( _position ); }
 
 		[[ nodiscard ]]
-		auto& GetScale()       { return m_transform_->GetLocalScale(); }
+		auto& GetLocalRotation()       { return m_transform_->GetLocalRotation(); }
 		[[ nodiscard ]]
-		auto& GetScale() const { return m_transform_->GetLocalScale(); }
-		void  SetScale( const cVector3f& _scale ){ m_transform_->SetLocalScale( _scale ); }
+		auto& GetLocalRotation() const { return m_transform_->GetLocalRotation(); }
+		void  SetLocalRotation( const cVector3f& _rotation ){ m_transform_->SetLocalRotation( _rotation ); }
+
+		[[ nodiscard ]]
+		auto& GetLocalScale()       { return m_transform_->GetLocalScale(); }
+		[[ nodiscard ]]
+		auto& GetLocalScale() const { return m_transform_->GetLocalScale(); }
+		void  SetLocalScale( const cVector3f& _scale ){ m_transform_->SetLocalScale( _scale ); }
+
+		[[ nodiscard ]]
+		auto& GetWorld() const { return m_transform_->GetWorld(); }
 
 		[[ nodiscard ]]
 		auto& GetTransform() const { return *m_transform_; }
-		
+
 		[[ nodiscard ]]
 		auto& GetSharedTransform() const { return m_transform_; }
 
@@ -178,6 +187,8 @@ namespace sk::Object
 		} // postEvent
 
 	private:
+		// TODO: Make a manager that keeps track of the transform needing to be updated.
+		// TODO: Figure out a way to control the flow of listeners
 		void _updateInternal()
 		{
 			if constexpr( kEventMask & kUpdate )

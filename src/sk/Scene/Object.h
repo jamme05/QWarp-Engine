@@ -163,14 +163,14 @@ namespace sk::Object
 		[[ nodiscard ]] auto& GetComponents() const { return m_components_; }
 		[[ nodiscard ]] auto& GetMeshComponents() const { return m_mesh_components_; }
 
-		[[ nodiscard ]] auto& GetPosition()       { return m_root->GetPosition(); }
-		[[ nodiscard ]] auto& GetPosition() const { return m_root->GetPosition(); }
+		[[ nodiscard ]] auto& GetPosition()       { return m_root->GetLocalPosition(); }
+		[[ nodiscard ]] auto& GetPosition() const { return m_root->GetLocalPosition(); }
 
-		[[ nodiscard ]] auto& GetRotation()       { return m_root->GetRotation(); }
-		[[ nodiscard ]] auto& GetRotation() const { return m_root->GetRotation(); }
+		[[ nodiscard ]] auto& GetRotation()       { return m_root->GetLocalRotation(); }
+		[[ nodiscard ]] auto& GetRotation() const { return m_root->GetLocalRotation(); }
 
-		[[ nodiscard ]] auto& GetScale()       { return m_root->GetScale(); }
-		[[ nodiscard ]] auto& GetScale() const { return m_root->GetScale(); }
+		[[ nodiscard ]] auto& GetScale()       { return m_root->GetLocalScale(); }
+		[[ nodiscard ]] auto& GetScale() const { return m_root->GetLocalScale(); }
 
 		[[ nodiscard ]] auto& GetTransform()       { return m_root->GetTransform(); }
 		[[ nodiscard ]] auto& GetTransform() const { return m_root->GetTransform(); }

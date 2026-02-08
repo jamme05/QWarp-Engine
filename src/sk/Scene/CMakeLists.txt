@@ -3,6 +3,7 @@ target_sources(SkapeEngine
   PRIVATE
     Scene.cpp
     Object.cpp
+    Layer.cpp
 
   PUBLIC
     FILE_SET engineIncludes
@@ -10,6 +11,7 @@ target_sources(SkapeEngine
     FILES
       Object.h
       Scene.h
+      Layer.h
 )
 
 add_subdirectory(Components)
