@@ -42,6 +42,7 @@
 #define SK_BREAK { ( void ) std::raise( SIGINT ); }
 #endif // !defined( SK_BREAK )
 
+// TODO: Make the passthrough only cover the debug print and not the if statement for methods returning.
 #define SK_ASSERT_TEMPLATE( Condition, Method, Text, ... ) \
     if( Condition ){ [[ unlikely ]] EXTRACT_TEXT( Method, Text ); __VA_ARGS__ }
 
