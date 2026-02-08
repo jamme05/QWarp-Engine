@@ -660,7 +660,7 @@ namespace sk
 			return cShared_ptr< Ty >( static_cast< const cPtr_base& >( *this ) );
 		}
 
-		operator bool( void ) const { return is_valid(); }
+		explicit operator bool( void ) const { return is_valid(); }
 		
 		bool operator==( std::nullptr_t ) const { return !is_valid(); }
 		bool operator==( const cWeak_Ptr& _right ) const { return m_data_ == _right.m_data_; }
