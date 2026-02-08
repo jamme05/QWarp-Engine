@@ -27,6 +27,10 @@
 #include <sk/Scene/Managers/SceneManager.h>
 #include <sk/Scene/Objects/CameraFlight.h>
 
+#ifdef SK_PHYSICS_JOLT
+#include <sk/Physics/Physics_Manager.h>
+#endif // SK_PHYSICS_JOLT
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -55,7 +59,6 @@ cEditor::cEditor()
 
     // TODO: Create a render context.
 
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     auto& io = ImGui::GetIO();
@@ -63,6 +66,10 @@ cEditor::cEditor()
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     Gui::InitImGui( m_main_window_ );
+
+#ifdef SK_PHYSICS_JOLT
+	Physics::cPhysics_Manager::init();
+#endif // SK_PHYSICS_JOLT
 
     cSceneManager::init();
 	Managers::cSelectionManager::init();
@@ -75,6 +82,10 @@ cEditor::~cEditor()
 	Managers::cSelectionManager::shutdown();
 
     cSceneManager::shutdown();
+
+#ifdef SK_PHYSICS_JOLT
+	Physics::cPhysics_Manager::shutdown();
+#endif // SK_PHYSICS_JOLT
 
     Gui::ImGuiShutdown();
     ImGui::DestroyContext();
@@ -246,6 +257,10 @@ void cEditor::Run()
 
     cSceneManager::get().update();
 	cEventManager::get().postEvent( m_is_game_running_.load() ? Object::kUpdate : Object::kEditorUpdate );
+
+#ifdef SK_PHYSICS_JOLT
+	Physics::cPhysics_Manager::get().Update();
+#endif // SK_PHYSICS_JOLT
 
     _drawMainWindow();
 
