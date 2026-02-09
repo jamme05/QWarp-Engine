@@ -31,7 +31,7 @@ namespace sk::Physics
         class cJoltPhysicsInternalComponent;
     } // sk::Physics::Components::
 
-    class cPhysics_Manager : public cSingleton< cPhysics_Manager >,
+    class cPhysics_Manager final : public cSingleton< cPhysics_Manager >,
         public JPH::BodyActivationListener,
         public JPH::ObjectLayerPairFilter,
         public JPH::BroadPhaseLayerInterface,
@@ -42,7 +42,7 @@ namespace sk::Physics
         friend class sk::Physics::Components::cShapeComponent;
     public:
         explicit cPhysics_Manager( uint8_t _threads = 4 );
-        ~cPhysics_Manager() final;
+        ~cPhysics_Manager();
 
         void Update();
 
