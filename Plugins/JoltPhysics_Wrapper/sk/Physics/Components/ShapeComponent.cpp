@@ -47,9 +47,10 @@ void cShapeComponent::registerSelf( const JPH::ShapeSettings& _shape )
 
     auto body = body_interface.CreateBody( settings );
 
+    // TODO: Hande shape recreation
     // We want to keep the weak pointer valid as long as the body lives, so we need to detach it.
     auto weak = get_weak();
-    body->SetUserData( reinterpret_cast< uint64_t& >( weak ) );
+    body->SetUserData( reinterpret_cast< size_t& >( weak ) );
     memset( &weak, 0, sizeof( weak ) );
 
 
