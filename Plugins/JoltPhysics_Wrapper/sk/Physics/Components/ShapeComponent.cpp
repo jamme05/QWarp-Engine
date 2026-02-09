@@ -15,7 +15,7 @@ cShapeComponent::~cShapeComponent()
     if( !m_body_id_.IsInvalid() )
     {
         const auto& body_interface = cPhysics_Manager::get().m_physics_system_->GetBodyInterface();
-        auto user_data = body_interface.GetUserData( m_body_id_ );
+        auto  user_data = body_interface.GetUserData( m_body_id_ );
         auto& weak = reinterpret_cast< cWeak_Ptr< iComponent >& >( user_data );
         weak.~cWeak_Ptr();
     }
@@ -49,11 +49,13 @@ void cShapeComponent::registerSelf( const JPH::ShapeSettings& _shape )
 
     // TODO: Hande shape recreation
     // We want to keep the weak pointer valid as long as the body lives, so we need to detach it.
-    auto weak = get_weak();
-    body->SetUserData( reinterpret_cast< size_t& >( weak ) );
-    memset( &weak, 0, sizeof( weak ) );
 
+    using weak_type = decltype( get_weak() );
+    uint64_t weak_data;
+    new( &weak_data ) weak_type{ get_weak() };
 
+    static_assert( sizeof( uint64_t ) >= sizeof( weak_type ), "Insufficient storage for weak_ptr" );
+    body->SetUserData( weak_data );
 
     cPhysics_Manager::get().addBody( body );
 }
