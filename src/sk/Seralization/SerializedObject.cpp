@@ -6,8 +6,60 @@
 #include <sk/Assets/Management/Asset_Manager.h>
 #include <sk/Containers/String.h>
 
+#include <charconv>
 
 using namespace sk;
+
+
+namespace
+{
+    auto get_meta_value( const simdjson::dom::object& _object ) -> cSerializedObject::value_t
+    {
+        auto& manager = cAsset_Manager::get();
+
+        auto uuid_str = _object.at_key( "asset_uuid" ).get_string();
+        cUUID uuid;
+        if( uuid_str.has_value() && uuid_str.value().size() > 32 )
+            uuid = cUUID::FromString( uuid_str.value() );
+        else
+            uuid = cUUID::kInvalid;
+
+        cWeak_Ptr< cAsset_Meta > meta;
+        if( uuid == cUUID::kInvalid )
+            meta = nullptr;
+        else
+            meta = manager.getAsset( uuid );
+
+        if( meta == nullptr )
+            meta = manager.GetAssetByPath( std::filesystem::path{ _object.at_key( "asset_path" ).get_string().value() } );
+
+        return meta;
+    }
+} // ::
+
+Serialization::cResources::cResources( simdjson::ondemand::object _object )
+{
+    auto& types = Reflection::cType_Manager::get().GetTypes();
+}
+
+void Serialization::cResources::StoreAsset( const cWeak_Ptr< cAsset_Meta >& _asset_id )
+{
+
+}
+
+void Serialization::cResources::StoreType( const type_info_t& _type )
+{
+
+}
+
+auto Serialization::cResources::GetAsset( const cUUID& _id ) -> cWeak_Ptr< cAsset_Meta >
+{
+
+}
+
+auto Serialization::cResources::GetType( uint64_t _id ) -> type_info_t
+{
+}
 
 cSerializedObject::cSerializedObject( const type_info_t _serialized_type, const size_t _element_count )
 : m_serialized_type_( _serialized_type )
@@ -17,99 +69,190 @@ cSerializedObject::cSerializedObject( const type_info_t _serialized_type, const 
 
 cSerializedObject::cSerializedObject() = default;
 
-cSerializedObject::cSerializedObject( const simdjson::dom::object& _object )
+cSerializedObject::cSerializedObject( simdjson::ondemand::object _object, Serialization::cResources* _resources )
 {
-    auto& types = Reflection::cType_Manager::get().GetTypes();
+    const bool owns_resources = _resources == nullptr;
 
-    if( const auto header_value = _object.at_key( "header" ); header_value.has_value() )
+    for( auto field : _object )
     {
-        // Fill header.
+        // The JSON should always be in this order.
 
-        if( const auto header = header_value.get_object(); header[ "valid_type" ].get_bool() )
+        if( auto key = field.key().value(); owns_resources && key == ":resources:" )
+            _resources = new Serialization::cResources( field.value().get_object() );
+        else if( key == ":type:" )
         {
-            const auto type = type_hash{ header[ "type_id" ].get_uint64() };
-            if( const auto itr = types.find( type ); itr != types.end() )
-                m_serialized_type_ = itr->second;
+            if( auto value = field.value(); !value.is_null() )
+                m_serialized_type_ = _resources->GetType( value.get_uint64() );
         }
-    }
-
-    if( const auto bases_value = _object.at_key( "bases" ); bases_value.has_value() )
-    {
-        // Fill bases.
-        for( auto base : bases_value.get_array() )
-            m_bases_.emplace_back( base.get_object() );
-    }
-
-    if( const auto data_object = _object.at_key( "data" ).get_object(); data_object.has_value() )
-    {
-        // Fill data.
-        for( auto [ key, value ] : data_object )
+        else if( key == ":bases:" ) // The object will not contain any base if there isn't any.
+            m_bases_.emplace_back( field.value().get_object(), _resources );
+        else
         {
+            // Handle data members
             sValueInfo info{};
-            info.name = info.json_safe_name = key;
+            size_t length = 0;
+            for( auto start = key.raw(); *start != ':'; start++ )
+                length++;
+
+            info.name        = std::string_view{ key.raw(), length };
             info.value_index = m_values_.size();
 
-            handle_json_element( value );
+            // We'll only need the inline info for the element.
+            handle_json_element( field.value().value(), std::string_view{ key.raw() + length }, _resources );
 
             m_info_.emplace_back( std::move( info ) );
         }
-    }
-
-    auto member_value  = _object.at_key( "members" );
-    if( member_value.has_value() )
-    {
-        // Fill real members.
-        // TODO: Handle real members
-        auto members = member_value.get_array();
     }
 }
 
 namespace
 {
+
     template< class Ty >
-    cSerializedObject::array_t handle_json_array( const simdjson::dom::array& _array )
+    auto handle_vector_value( simdjson::ondemand::array _array, const std::string_view& _key )
     {
-        auto buffer = SK_NEW( Ty, _array.size() );
-        for( auto val = buffer; auto element : _array )
+        using value_t = cSerializedObject::value_t;
+        auto size = _key[ _key.length() - 3 ] - '0';
+
+        std::vector< Ty > elements( size );
+        for( size_t i = 0; auto element : _array )
+            elements[ i++ ] = element.get< Ty >();
+
+        switch( size )
         {
-            if constexpr( std::is_same_v< Ty, cSerializedObject > )
-            {
-                if( element.type() == simdjson::dom::element_type::ARRAY )
-                    *val++ = cSerializedObject( element.get_array() );
-                else if( element.type() == simdjson::dom::element_type::OBJECT )
-                    *val++ = cSerializedObject( element.get_object() );
-            }
-            else if constexpr( std::is_same_v< Ty, std::string > )
-                *val++ = std::string{ element.get< std::string_view >().value() };
-            else
-                *val++ = element.get< Ty >();
+        case 2:  return value_t{ Math::cVector2< Ty >{ elements.data() } };
+        case 3:  return value_t{ Math::cVector3< Ty >{ elements.data() } };
+        case 4:  return value_t{ Math::cVector4< Ty >{ elements.data() } };
+        default: SK_BREAK;
         }
+
+        return value_t{ std::monostate{} };
+    }
+
+    // Returns size, element type
+    auto get_array_info( const std::string_view& _key ) -> std::pair< size_t, std::string_view >
+    {
+        if( _key[ _key.length() - 2 ] == 'x' )
+            return std::make_pair( std::numeric_limits< size_t >::max(), std::string_view{ _key.data(), _key.length() - 3 } );
+
+        const auto start = _key.find_last_not_of( ':', _key.length() - 2 );
+        const auto end   = _key.length() - 1;
+
+        uint32_t value;
+        if( std::from_chars( _key.data() + start, _key.data() + end, value ).ec == std::errc{} )
+            return std::make_pair( value, std::string_view{ _key.data(), start - 1 } );
+
+        return std::make_pair( std::numeric_limits< size_t >::max(), std::string_view{ _key.data(), start - 1 } );
+    }
+
+    auto handle_json_array_value( simdjson::ondemand::array _array, const std::string_view& _key, Serialization::cResources* _resources ) -> cSerializedObject::value_t
+    {
+        const char* type_info = &_key.back() - 1;
+
+        // It's a normal array
+        if( *type_info == 'x' || std::isdigit( *type_info ) )
+        {
+            auto [ size, element_type ] = get_array_info( _key );
+            return cSerializedObject( _array, size, element_type, _resources );
+        }
+        switch( *type_info )
+        {
+        case 'd': return handle_vector_value< double >( _array, _key );
+        case 'i': return handle_vector_value< int64_t >( _array, _key );
+        case 'u': return handle_vector_value< uint64_t >( _array, _key );
+        default: return std::monostate{};
+        }
+    }
+
+    auto handle_json_element_( simdjson::ondemand::value _element, std::string_view _key, Serialization::cResources* _resources ) -> cSerializedObject::value_t
+    {
+        using element_type = simdjson::ondemand::json_type;
+        using number_type  = simdjson::ondemand::number_type;
+
+        const bool has_type = _key.back() == ':';
+
+        switch( _element.type().value() )
+        {
+        case element_type::array:  return handle_json_array_value( _element.get_array().value(), _key, _resources );
+        case element_type::object: return cSerializedObject( _element.get_object(), _resources );
+        case element_type::number:
+            if( has_type )
+            {
+                // Is this a type resource reference?
+                if( _key[ _key.length() - 2 ] == 't' )
+                {
+                    // TODO: Add type info to value_t
+                    break;
+                }
+            }
+            switch( _element.get_number_type() )
+            {
+            case number_type::unsigned_integer:      return _element.get_uint64(); break;
+            case number_type::signed_integer:        return _element.get_int64(); break;
+            case number_type::floating_point_number: return _element.get_double(); break;
+            default: return std::monostate{}; break; // Use null
+            }
+        case element_type::string:
+            if( has_type )
+            {
+                // Is this an asset resource reference?
+                if( _key[ _key.length() - 2 ] == 'a' )
+                    return _resources->GetAsset( cUUID::FromString( _element.get_string() ) );
+            }
+            return std::string{ _element.get_string().value() };
+        case element_type::boolean: return _element.get_bool();
+        case element_type::null:
+        case element_type::unknown: return std::monostate{};
+        }
+        return std::monostate{};
+    }
+
+    template< class Ty >
+    auto handle_json_array( simdjson::ondemand::array _array, size_t _length, const std::string_view& _key, Serialization::cResources* _resources ) -> cSerializedObject::array_t
+    {
+        auto buffer = SK_NEW( Ty, _length );
+        for( auto val = buffer; auto element : _array )
+            *val++ = std::get< Ty >( handle_json_element_( element.value(), _key, _resources ) );
 
         return buffer;
     }
 } // ::
 
-cSerializedObject::cSerializedObject( const simdjson::dom::array& _array )
+cSerializedObject::cSerializedObject( simdjson::ondemand::array _array, size_t _length, const std::string_view& _key, Serialization::cResources* _resources )
 {
-    using element_type = simdjson::dom::element_type;
+    using element_type = simdjson::ondemand::json_type;
+    using number_type  = simdjson::ondemand::number_type;
 
-    if( _array.size() == 0 )
-        m_element_count_ = 0;
-    else
+    if( _length == std::numeric_limits< size_t >::max() )
+        _length = _array.count_elements();
+
+    m_element_count_ = _length;
+    if( m_element_count_ == 0 )
+        return;
+
+
+
+    switch( auto first = *_array.begin(); first.type().value() )
     {
-        m_element_count_ = _array.size();
-        switch( _array.at( 0 ).type().value() )
+    case element_type::array:
+    {
+        if(  )
+        m_element_data_ = handle_json_array< cSerializedObject >( _array, _length, _key, _resources ); break;
+    }
+    case element_type::object: m_element_data_ = handle_json_array< cSerializedObject >( _array, _length, _key, _resources ); break;
+    case element_type::number:
+        switch( first.get_number_type().value() )
         {
-        case element_type::ARRAY:  m_element_data_ = handle_json_array< cSerializedObject >( _array ); break;
-            // TODO: Handle if it's a vector or asset metadata
-        case element_type::OBJECT: m_element_data_ = handle_json_array< cSerializedObject >( _array ); break;
-        case element_type::INT64:  m_element_data_ = handle_json_array< int64_t  >( _array ); break;
-        case element_type::UINT64: m_element_data_ = handle_json_array< uint64_t >( _array ); break;
-        case element_type::DOUBLE: m_element_data_ = handle_json_array< double   >( _array ); break;
-        case element_type::STRING: m_element_data_ = handle_json_array< std::string >( _array ); break;
-        case element_type::BOOL:   m_element_data_ = handle_json_array< bool >( _array ); break;
-        case element_type::NULL_VALUE: break;
+        case number_type::floating_point_number: m_element_data_ = handle_json_array< double >( _array, _length, _key, _resources ); break;
+        case number_type::signed_integer:        m_element_data_ = handle_json_array< int64_t  >( _array, _length, _key, _resources ); break;
+        case number_type::unsigned_integer:      m_element_data_ = handle_json_array< uint64_t >( _array, _length, _key, _resources ); break;
+        case number_type::big_integer:           break;
         }
+        break;
+    case element_type::string:  m_element_data_ = handle_json_array< std::string >( _array, _length, _key, _resources ); break;
+    case element_type::boolean: m_element_data_ = handle_json_array< bool >( _array, _length, _key, _resources ); break;
+    case element_type::unknown:
+    case element_type::null: break;
     }
 }
 
@@ -569,94 +712,9 @@ void cSerializedObject::handle_info( json_builder_t& _builder, const sValueInfo&
     std::visit( visitor, element );
 }
 
-namespace
+void cSerializedObject::handle_json_element( const simdjson::ondemand::value& _element, const std::string_view _key, Serialization::cResources* _resources )
 {
-    template< class Ty >
-    auto get_vector_value( const simdjson::dom::object& _object ) -> cSerializedObject::value_t
-    {
-        switch( _object.size() )
-        {
-        case 2: return Math::cVector2< Ty >{ _object.at_key( "x" ).get< Ty >().value(), _object.at_key( "y" ).get< Ty >().value() };
-        case 3: return Math::cVector3< Ty >{ _object.at_key( "x" ).get< Ty >().value(), _object.at_key( "y" ).get< Ty >().value(), _object.at_key( "z" ).get< Ty >().value() };
-        case 4: return Math::cVector4< Ty >{ _object.at_key( "x" ).get< Ty >().value(), _object.at_key( "y" ).get< Ty >().value(), _object.at_key( "z" ).get< Ty >().value(), _object.at_key( "w" ).get< Ty >().value() };
-        default: return {};
-        }
-    }
-
-    auto get_meta_value( const simdjson::dom::object& _object ) -> cSerializedObject::value_t
-    {
-        auto& manager = cAsset_Manager::get();
-
-        auto uuid_str = _object.at_key( "asset_uuid" ).get_string();
-        cUUID uuid;
-        if( uuid_str.has_value() && uuid_str.value().size() > 32 )
-            uuid = cUUID::FromString( uuid_str.value() );
-        else
-            uuid = cUUID::kInvalid;
-
-        cWeak_Ptr< cAsset_Meta > meta;
-        if( uuid == cUUID::kInvalid )
-            meta = nullptr;
-        else
-            meta = manager.getAsset( uuid );
-
-        if( meta == nullptr )
-            meta = manager.GetAssetByPath( std::filesystem::path{ _object.at_key( "asset_path" ).get_string().value() } );
-
-        return meta;
-    }
-} // ::
-
-void cSerializedObject::handle_json_element( const simdjson::dom::element& _element )
-{
-    using element_type = simdjson::dom::element_type;
-
-    switch( _element.type() )
-    {
-    case element_type::ARRAY:
-        m_values_.emplace_back( cSerializedObject( _element.get_array() ) );
-        break;
-    case element_type::OBJECT:
-        {
-            auto object = _element.get_object();
-            if( auto x = object.at_key( "x" ); x.has_value() )
-            {
-                // It's a vector type, so we handle it separately.
-                // TODO: Actually handle the types
-                switch( x.type() )
-                {
-                case element_type::DOUBLE: m_values_.emplace_back( get_vector_value< double   >( object.value() ) );
-                case element_type::INT64:  m_values_.emplace_back( get_vector_value< double  >( object.value() ) );
-                case element_type::UINT64: m_values_.emplace_back( get_vector_value< double >( object.value() ) );
-                default: break;
-                }
-            }
-            else if( object.begin().key().starts_with("asset" ) )
-                m_values_.emplace_back( get_meta_value( object.value() ) );
-            else
-                m_values_.emplace_back( cSerializedObject( object.value() ) );
-        }
-        break;
-    case element_type::INT64:
-        m_values_.emplace_back( _element.get_int64() );
-        break;
-    case element_type::UINT64:
-        m_values_.emplace_back( _element.get_uint64() );
-        break;
-    case element_type::DOUBLE:
-        m_values_.emplace_back( _element.get_double() );
-        break;
-    case element_type::STRING:
-        m_values_.emplace_back( std::string{ _element.get_string().value() } );
-        break;
-    case element_type::BOOL:
-        m_values_.emplace_back( _element.get_bool() );
-        break;
-    case element_type::NULL_VALUE:
-        // TODO: Actually handle null
-        m_values_.emplace_back( false );
-        break;
-    }
+    m_values_.emplace_back( handle_json_element_( _element, _key, _resources ) );
 }
 
 void cSerializedObject::_writeData( const cStringID& _name, value_t&& _value )

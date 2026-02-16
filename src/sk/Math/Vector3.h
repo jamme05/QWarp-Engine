@@ -65,7 +65,7 @@ namespace sk::Math
 		template <typename T2>
 		constexpr cVector(const cVector<4, T2>& _v) : x(static_cast<T>(_v.x)), y(static_cast<T>(_v.y)), z(static_cast<T>(_v.z)) {}
 		// Construct from array/pointer
-		constexpr explicit cVector(const T* _p[3]) : x(_p[0]), y(_p[1]), z(_p[2]) {}
+		constexpr explicit cVector(const T _p[3]) : x(_p[0]), y(_p[1]), z(_p[2]) {}
 
 		// Cast to other Vectors:
 		explicit constexpr operator cVector< 2, T>() { return cVector< 2, T>(*this); }

@@ -7,6 +7,7 @@
 #include <sk/Math/Vector4.h>
 #include <sk/Misc/Smart_Ptrs.h>
 #include <sk/Misc/StringID.h>
+#include <sk/Misc/UUID.h>
 #include <sk/Misc/Visitor.h>
 #include <sk/Reflection/RuntimeClass.h>
 
@@ -14,9 +15,41 @@
 
 #include <variant>
 
+
 namespace sk
 {
     class cAsset_Meta;
+
+    namespace Serialization
+    {
+        class cResources
+        {
+        public:
+            using builder_t = simdjson::builder::string_builder;
+
+            cResources() = default;
+            explicit cResources( simdjson::ondemand::object _object );
+
+            struct sEntry
+            {
+                size_t      index;
+                std::string json_string;
+            };
+
+            using type_map_t  = std::unordered_map< type_hash,     sEntry >;
+            using asset_map_t = std::unordered_map< hash< cUUID >, sEntry >;
+
+            void StoreAsset( const cWeak_Ptr< cAsset_Meta >& _asset_id );
+            void StoreType ( const type_info_t& _type );
+            auto GetAsset  ( const cUUID& _id ) -> cWeak_Ptr< cAsset_Meta >;
+            auto GetType   ( uint64_t _id ) -> type_info_t;
+
+            builder_t   builder;
+
+            type_map_t  types;
+            asset_map_t assets;
+        };
+    } // sk::Serialization::
 
     SK_CLASS( SerializedObject )
     {
@@ -51,8 +84,9 @@ namespace sk
         };
         
         cSerializedObject();
-        explicit cSerializedObject( const simdjson::dom::object& _object );
-        explicit cSerializedObject( const simdjson::dom::array& _array );
+        explicit cSerializedObject( simdjson::ondemand::object _object, Serialization::cResources* _resources = nullptr );
+        explicit cSerializedObject( simdjson::ondemand::array  _array, size_t _length = std::numeric_limits< size_t >::max(),
+            const std::string_view& _key = {}, Serialization::cResources* _resources = nullptr );
         cSerializedObject( const cSerializedObject& _other );
         cSerializedObject( cSerializedObject&& _other ) noexcept;
         ~cSerializedObject() override;
@@ -173,7 +207,7 @@ namespace sk
         void create_json_object( json_builder_t& _builder );
         void create_json_array( json_builder_t& _builder );
         void handle_info( json_builder_t& _builder, const sValueInfo& _info );
-        void handle_json_element( const simdjson::dom::element& _element );
+        void handle_json_element(const simdjson::ondemand::value& _element, std::string_view _key, Serialization::cResources* _resources );
 
         void _writeData( const cStringID& _name, value_t&& _value );
         

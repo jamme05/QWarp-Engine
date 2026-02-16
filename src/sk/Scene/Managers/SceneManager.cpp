@@ -49,8 +49,19 @@ namespace
 			return;
 		}
 
+		std::ifstream json_file{ _path, std::ifstream::in | std::ifstream::binary | std::ifstream::ate };
+		json_file.seekg( 0, json_file.end );
+
+		const size_t size = json_file.tellg();
+		json_file.seekg( 0, json_file.beg );
+
+		std::string json_str( size, 0 );
+		json_file.read( json_str.data(), json_str.size() );
+
 		simdjson::dom::parser parser;
-		auto object = cSerializedObject{ parser.load( _path.string() ).get_object() };
+		simdjson::ondemand::parser parser2;
+		auto doc = parser2.iterate( json_str );
+		auto object = cSerializedObject{ doc.get_object() };
 
 		meta->setAsset( SK_SINGLE( cScene, object ) );
 	}
