@@ -2,14 +2,21 @@
 #pragma once
 
 #include <sk/Math/Vector3.h>
+#include <sk/Misc/Smart_Ptrs.h>
 
 #include <vector>
+
+namespace sk::Object
+{
+    class cObject;
+} // sk::Object::
 
 namespace sk::Physics::Utils
 {
     struct sRayCastResult
     {
-
+        cWeak_Ptr< Object::cObject >    hit_object;
+        cWeak_Ptr< Object::iComponent > hit_component;
     };
 
     // Returns the closest hit.
