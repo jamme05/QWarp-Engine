@@ -222,8 +222,8 @@ namespace sk::Scene
         
         cLayer_Manager();
 
-        void AddLayer   ( uint64_t _layer, const cStringID& _name );
-        void RemoveLayer( uint64_t _layer );
+        void AddLayer   ( uint8_t _layer, const cStringID& _name );
+        void RemoveLayer( uint8_t _layer );
 
         void AddObject   ( const cShared_ptr< Object::cObject >& _object );
         void RemoveObject( const cShared_ptr< Object::cObject >& _object );

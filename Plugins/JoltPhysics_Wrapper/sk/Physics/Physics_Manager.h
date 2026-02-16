@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <expected>
 #include <sk/Misc/Singleton.h>
 #include <sk/Misc/StringID.h>
 
@@ -41,13 +42,26 @@ namespace sk::Physics
         friend class sk::Physics::Components::cJoltPhysicsInternalComponent;
         friend class sk::Physics::Components::cShapeComponent;
     public:
+        struct sLayer
+        {
+            cStringID name;
+            uint32_t  layer;
+            uint32_t  layer_value;
+        };
         explicit cPhysics_Manager( uint8_t _threads = 4 );
         ~cPhysics_Manager();
 
         void Update();
 
-        void AddLayer   ( const cStringID& _name, uint8_t _layer );
-        void RemoveLayer( uint8_t _layer );
+        void AddLayer      ( const cStringID& _name, uint8_t _layer );
+        void RemoveLayer   ( uint8_t _layer );
+        void SetLayerName  ( uint8_t _layer, const cStringID& _name );
+        auto GetLayerByName( const cStringID& _name ) const -> const sLayer*;
+        // TODO: Pick better names than layer_a/layer_b
+        void SetLayerCollidesAgainst( const cStringID& _layer_a, const cStringID& _layer_b, bool _should_collide );
+        bool GetLayerCollidesAgainst( const cStringID& _layer_a, const cStringID& _layer_b );
+        void SetLayerCollidesAgainst( uint8_t _layer_a, uint8_t _layer_b, bool _should_collide );
+        bool GetLayerCollidesAgainst( uint8_t _layer_a, uint8_t _layer_b );
 
         const auto& GetPhysicsSystem() const { return *m_physics_system_; }
 
@@ -81,5 +95,7 @@ namespace sk::Physics
         std::unique_ptr< JPH::PhysicsSystem       > m_physics_system_;
         std::unique_ptr< JPH::JobSystemThreadPool > m_job_system_;
 
+        std::vector< bool >   m_collision_mask_;
+        std::vector< sLayer > m_layers_;
     };
 } // sk::Physics::

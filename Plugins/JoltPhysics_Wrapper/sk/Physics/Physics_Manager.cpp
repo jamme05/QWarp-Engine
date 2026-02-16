@@ -211,6 +211,10 @@ cPhysics_Manager::cPhysics_Manager( const uint8_t _threads )
 
 	MyContactListener contact_listener;
 	physics_system.SetContactListener( &contact_listener );
+
+	m_collision_mask_.resize( ceval( Math::pow2( sizeof( uint32_t ) ) ) );
+
+	AddLayer( "Default", 0 );
 }
 
 cPhysics_Manager::~cPhysics_Manager()
@@ -246,12 +250,90 @@ void cPhysics_Manager::Update()
 
 void cPhysics_Manager::AddLayer( const cStringID& _name, uint8_t _layer )
 {
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, _layer >= sizeof( uint32_t ),
+		TEXT( "Layer with name {} is outside of the 32 max value range.", _name.view() ) )
 
+	sLayer* layer;
+	if( m_layers_.size() <= _layer )
+		layer = &m_layers_.emplace_back();
+	else
+		layer = &m_layers_[ _layer ];
+
+	auto& [ name, layer_index, layer_value ] = *layer;
+	name        = _name;
+	layer_index = _layer;
+	layer_value = 1 << _layer;
 }
 
 void cPhysics_Manager::RemoveLayer( uint8_t _layer )
 {
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, _layer >= sizeof( uint32_t ),
+		"Layer is outside of the 32 max value range." )
 
+	SK_BREAK; // TODO
+}
+
+void cPhysics_Manager::SetLayerName( uint8_t _layer, const cStringID& _name )
+{
+	SK_BREAK; // TODO
+}
+
+auto cPhysics_Manager::GetLayerByName( const cStringID& _name ) const -> const sLayer*
+{
+	if( auto itr = std::ranges::find_if( m_layers_,[&_name]( const sLayer& _layer ){ return _layer.name == _name; } );
+		itr != m_layers_.end() )
+		return &( *itr );
+	return nullptr;
+}
+
+void cPhysics_Manager::SetLayerCollidesAgainst( const cStringID& _layer_a, const cStringID& _layer_b,
+	bool _should_collide )
+{
+	const auto layer_a = GetLayerByName( _layer_a );
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, layer_a == nullptr,
+		TEXT( "Layer with name {} does not exist.", _layer_a.view() ) );
+
+	const auto layer_b = GetLayerByName( _layer_b );
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, layer_b == nullptr,
+		TEXT( "Layer with name {} does not exist.", _layer_b.view() ) );
+
+	SetLayerCollidesAgainst( layer_a->layer, layer_b->layer, _should_collide );
+}
+
+void cPhysics_Manager::SetLayerCollidesAgainst( const uint8_t _layer_a, const uint8_t _layer_b, bool _should_collide )
+{
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, _layer_a >= sizeof( uint32_t ),
+		"_layer_a is outside of the 32 max value range." );
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, _layer_b >= sizeof( uint32_t ),
+		"_layer_b is outside of the 32 max value range." );
+
+	const size_t index = _layer_a * sizeof( uint32_t ) + _layer_b;
+	m_collision_mask_[ index ] = _should_collide;
+}
+
+bool cPhysics_Manager::GetLayerCollidesAgainst( const cStringID& _layer_a, const cStringID& _layer_b )
+{
+	// TODO: Use something like std::expected to handle error cases.
+	const auto layer_a = GetLayerByName( _layer_a );
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, layer_a == nullptr,
+		TEXT( "Layer with name {} does not exist.", _layer_a.view() ), false );
+
+	const auto layer_b = GetLayerByName( _layer_b );
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, layer_b == nullptr,
+		TEXT( "Layer with name {} does not exist.", _layer_b.view() ), false );
+
+	return GetLayerCollidesAgainst( layer_a->layer, layer_b->layer );
+}
+
+bool cPhysics_Manager::GetLayerCollidesAgainst( uint8_t _layer_a, uint8_t _layer_b )
+{
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, _layer_a >= sizeof( uint32_t ),
+	"_layer_a is outside of the 32 max value range.", false );
+	SK_BREAK_RET_IF( sk::Severity::kGeneral, _layer_b >= sizeof( uint32_t ),
+		"_layer_b is outside of the 32 max value range.", false );
+
+	const size_t index = _layer_a * sizeof( uint32_t ) + _layer_b;
+	return m_collision_mask_[ index ];
 }
 
 void cPhysics_Manager::OnBodyActivated( const JPH::BodyID& inBodyID, uint64_t inBodyUserData )
@@ -264,8 +346,8 @@ void cPhysics_Manager::OnBodyDeactivated( const JPH::BodyID& inBodyID, uint64_t 
 	auto& weak = reinterpret_cast< cWeak_Ptr< Components::cShapeComponent >& >( inBodyUserData );
 }
 
-JPH::ValidateResult cPhysics_Manager::OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2,
-	JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult)
+JPH::ValidateResult cPhysics_Manager::OnContactValidate( const JPH::Body& inBody1, const JPH::Body& inBody2,
+	JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult )
 {
 	return ContactListener::OnContactValidate( inBody1, inBody2, inBaseOffset, inCollisionResult );
 }

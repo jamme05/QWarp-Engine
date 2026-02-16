@@ -36,14 +36,14 @@ sk::Scene::cLayer_Manager::cLayer_Manager()
     AddLayer( 0, "Default" );
 }
 
-void sk::Scene::cLayer_Manager::AddLayer( const uint64_t _layer, const cStringID& _name )
+void sk::Scene::cLayer_Manager::AddLayer( const uint8_t _layer, const cStringID& _name )
 {
     SK_BREAK_RET_IF( sk::Severity::kGeneral,
         m_name_to_layer_.contains( _name.hash() ),
         TEXT( "Layer with name {} has already been added.", _name.view() ) )
     
-    SK_BREAK_RET_IFN( sk::Severity::kGeneral, Memory::is_power_of_two( _layer ),
-        TEXT( "Layer with name {} and value {} is not a power of two.", _name.view(), _layer ) )
+    SK_BREAK_RET_IF( sk::Severity::kGeneral, _layer >= sizeof( uint64_t ),
+        TEXT( "Layer with name {} is outside of the 64 max value range.", _name.view() ) )
     
     sLayer* layer;
     if( m_layers_.size() <= static_cast< size_t >( _layer ) )
@@ -64,7 +64,7 @@ void sk::Scene::cLayer_Manager::AddLayer( const uint64_t _layer, const cStringID
     objects   = object_vec_t{};
 }
 
-void sk::Scene::cLayer_Manager::RemoveLayer( const uint64_t _layer )
+void sk::Scene::cLayer_Manager::RemoveLayer( const uint8_t _layer )
 {
     SK_BREAK_RET_IF( sk::Severity::kGeneral, m_layers_.size() <= _layer,
         TEXT( "Layer with value {} does not exist.", _layer ) )
@@ -165,8 +165,7 @@ auto sk::Scene::cLayer_Manager::GetMeshesIn( const uint64_t _layers ) const -> m
     return { mesh_itr_start, mesh_itr_end };
 }
 
-void sk::Scene::cLayer_Manager::
-removeObjectAt( const size_t _layer_index, const size_t _index )
+void sk::Scene::cLayer_Manager::removeObjectAt( const size_t _layer_index, const size_t _index )
 {
     // Make sure that the index is correct beforehand.
     
