@@ -1,4 +1,4 @@
-#version 330 core
+#version 450 core
 
 layout ( location = 0 ) in vec3 aPosition;
 layout ( location = 1 ) in vec3 aNormal;
@@ -8,15 +8,15 @@ out vec4 WorldPos;
 out vec3 WorldNormal;
 out vec2 TexCoord;
 
-layout( std140 ) uniform _Camera
+uniform _Camera
 {
     mat4 view_proj;
 };
 
-layout( std140 ) uniform _Object
+uniform _Object
 {
-    mat4 world;
     mat4 inverse_world;
+    mat4 world;
 };
 
 mat4 WorldViewProj()

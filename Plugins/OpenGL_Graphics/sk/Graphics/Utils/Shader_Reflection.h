@@ -65,7 +65,7 @@ namespace sk::Graphics::Utils
         };
         cStringID   name;
         std::string pretty_name;
-            
+
         gl::GLenum gl_type;
         // Either the index or bytewise offset.
         uint32_t location;

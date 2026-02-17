@@ -178,14 +178,15 @@ void cShader_Reflection::fetch_blocks()
         std::vector< gl::GLint > offsets( nr_of_uniforms );
 
         gl::glGetActiveUniformsiv( m_program_, nr_of_uniforms, reinterpret_cast< const gl::GLuint* >( indices.data() ), gl::GL_UNIFORM_OFFSET, offsets.data() );
-        
+
+        // TODO: Handle multi dimensional arrays which are received as array[ N ][ 0 ]
         uint32_t block_size = 0;
         for( int_fast32_t u = 0; u < nr_of_uniforms; u++ )
         {
             auto uniform = std::get< sUniform >( get_uniform( indices[ u ] ) );
             
             uniform.location = offsets[ u ];
-            block_size      += uniform.byte_size;
+            block_size      += sk::Memory::get_aligned( uniform.byte_size * uniform.size, Memory::eAlignment::kShaderAlign );
             
             m_locked_uniforms_.insert( uniform.name );
             block.uniforms[ uniform.name.hash() ] = std::move( uniform );
