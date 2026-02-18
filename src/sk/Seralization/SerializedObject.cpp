@@ -107,6 +107,39 @@ cSerializedObject::cSerializedObject( simdjson::ondemand::object _object, Serial
 
 namespace
 {
+    // Unknown/SerializableObject
+    template< class Ty >
+    constexpr auto kTypeString = std::string{};
+    template<>
+    constexpr auto kTypeString< cWeak_Ptr< cAsset_Meta > > = std::string{ "a:" };
+    template<>
+    constexpr auto kTypeString< bool > = std::string{ "b:" };
+    template<>
+    constexpr auto kTypeString< int64_t > = std::string{ "i:" };
+    template<>
+    constexpr auto kTypeString< cVector2i64 > = std::string{ "2i:" };
+    template<>
+    constexpr auto kTypeString< cVector3i64 > = std::string{ "3i:" };
+    template<>
+    constexpr auto kTypeString< cVector4i64 > = std::string{ "3i:" };
+    template<>
+    constexpr auto kTypeString< uint64_t > = std::string{ "u:" };
+    template<>
+    constexpr auto kTypeString< cVector2u64 > = std::string{ "2u:" };
+    template<>
+    constexpr auto kTypeString< cVector3u64 > = std::string{ "3u:" };
+    template<>
+    constexpr auto kTypeString< cVector4u64 > = std::string{ "4u:" };
+    template<>
+    constexpr auto kTypeString< double > = std::string{ "d:" };
+    template<>
+    constexpr auto kTypeString< cVector2d > = std::string{ "2d:" };
+    template<>
+    constexpr auto kTypeString< cVector3d > = std::string{ "3d:" };
+    template<>
+    constexpr auto kTypeString< cVector4d > = std::string{ "4d:" };
+    template<>
+    constexpr auto kTypeString< std::string > = std::string{ "s:" };
 
     template< class Ty >
     auto handle_vector_value( simdjson::ondemand::array _array, const std::string_view& _key )
@@ -229,8 +262,6 @@ cSerializedObject::cSerializedObject( simdjson::ondemand::array _array, size_t _
     m_element_count_ = _length;
     if( m_element_count_ == 0 )
         return;
-
-
 
     switch( auto first = *_array.begin(); first.type().value() )
     {
@@ -389,67 +420,54 @@ void cSerializedObject::Reset()
 
 auto cSerializedObject::CreateJSON() -> std::string_view
 {
-    CreateJSON( m_json_builder_ );
+    m_json_builder_.clear();
+    CreateJSON( m_json_builder_, nullptr );
 
     return m_json_builder_;
 }
 
-void cSerializedObject::CreateJSON( json_builder_t& _builder )
+void cSerializedObject::CreateJSON( json_builder_t& _builder, std::string* _type )
 {
+    // As we're mainly going to be recreating the structure from the ground up. Only cache if the user explicitly creates the JSON for an object.
     if( !has_completed_json() )
     {
         if( !IsArray() )
         {
-            m_json_builder_.start_object();
+            _builder.start_object();
 
-            // Write type header.
-            m_json_builder_.escape_and_append_with_quotes( "header" );
-            m_json_builder_.append_colon();
-            m_json_builder_.start_object(); // Header body start
-
+            // :type: - uint64_t
             if( m_serialized_type_ != nullptr )
             {
-                m_json_builder_.append_key_value( "valid_type", true );
-                m_json_builder_.append_comma();
-                m_json_builder_.append_key_value( "type_name",  m_serialized_type_->name );
-                m_json_builder_.append_comma();
-                m_json_builder_.append_key_value( "type_id",    m_serialized_type_->hash.value() );
+                _builder.append_key_value( ":type:", m_serialized_type_->hash );
+                _builder.append_comma();
             }
-            else
-                m_json_builder_.append_key_value( "valid_type", false );
 
-            m_json_builder_.end_object(); // Header body end
-            m_json_builder_.append_comma();
-
+            // :bases: - SerializedObject[]
             if( m_serialized_type_ != nullptr && !m_bases_.empty() )
             {
-                m_json_builder_.escape_and_append_with_quotes( "bases" );
-                m_json_builder_.append_colon();
-                m_json_builder_.start_array(); // Bases body start
+                _builder.escape_and_append_with_quotes( ":bases:" );
+                _builder.append_colon();
+                _builder.start_array(); // Bases start
 
                 for( size_t i = 0; i < m_bases_.size(); i++ )
                 {
-                    m_bases_[ i ].CreateJSON( m_json_builder_ );
+                    m_bases_[ i ].CreateJSON( _builder, nullptr );
                     if( i != m_bases_.size() - 1 )
-                        m_json_builder_.append_comma();
+                        _builder.append_comma();
                 }
 
-                m_json_builder_.end_array(); // Bases body end
-                m_json_builder_.append_comma();
+                _builder.end_array(); // Bases end
+                _builder.append_comma();
             }
 
-            m_json_builder_.escape_and_append_with_quotes( "data" );
-            m_json_builder_.append_colon();
+            create_json_object( _builder );
 
-            create_json_object( m_json_builder_ );
-
-            m_json_builder_.end_object();
+            _builder.end_object();
         }
         else
-            create_json_array( m_json_builder_ );
+            create_json_array( _builder, *_type );
     }
-
-    if( &_builder != &m_json_builder_ )
+    else if( &_builder != &m_json_builder_ )
         _builder.append_raw( m_json_builder_ );
 }
 
@@ -579,28 +597,24 @@ void cSerializedObject::create_json_object( json_builder_t& _builder )
 {
     // TODO: Store member variables.
     auto& builder = _builder;
-    
-    builder.start_object();
 
     for( auto& info : m_info_ )
     {
-        builder.escape_and_append_with_quotes( info.json_safe_name );
-        builder.append_colon();
-        
-        handle_info( builder, info );
+        handle_info( builder, info, info.json_safe_name.string() );
         
         if( &info != &m_info_.back() )
             builder.append_comma();
     }
-    
-    builder.end_object();
 }
 
 namespace
 {
-        void handle_value( cSerializedObject::json_builder_t& _builder, auto& _value )
+    void handle_value( cSerializedObject::json_builder_t& _builder, auto& _value, std::string* _type )
     {
         auto& builder = _builder;
+
+        if( _type != nullptr )
+            *_type = kTypeString< decltype( _value ) >;
 
         sVisitor{
             [&]( std::monostate& )
@@ -609,7 +623,7 @@ namespace
             },
             [&]( cSerializedObject& _val )
             {
-                _val.CreateJSON( builder );
+                _val.CreateJSON( builder, _type );
             },
             [&]( const bool& _val )
             {
@@ -633,83 +647,164 @@ namespace
             },
             [&]< class Ty >( const Math::cVector< 2, Ty >& _vector )
             {
-                builder.start_object();
-                builder.append_key_value( "x", _vector[ 0 ] );
+                builder.start_array();
+                builder.append( _vector[ 0 ] );
                 builder.append_comma();
-                builder.append_key_value( "y", _vector[ 1 ] );
-                builder.end_object();
+                builder.append( _vector[ 1 ] );
+                builder.end_array();
             },
             [&]< class Ty >( const Math::cVector< 3, Ty >& _vector )
             {
-                builder.start_object();
-                builder.append_key_value( "x", _vector[ 0 ] );
+                builder.start_array();
+                builder.append( _vector[ 0 ] );
                 builder.append_comma();
-                builder.append_key_value( "y", _vector[ 1 ] );
+                builder.append( _vector[ 1 ] );
                 builder.append_comma();
-                builder.append_key_value( "z", _vector[ 2 ] );
-                builder.end_object();
+                builder.append( _vector[ 2 ] );
+                builder.end_array();
             },
             [&]< class Ty >( const Math::cVector< 4, Ty >& _vector )
             {
-                builder.start_object();
-                builder.append_key_value( "x", _vector[ 0 ] );
+                builder.start_array();
+                builder.append( _vector[ 0 ] );
                 builder.append_comma();
-                builder.append_key_value( "y", _vector[ 1 ] );
+                builder.append( _vector[ 1 ] );
                 builder.append_comma();
-                builder.append_key_value( "z", _vector[ 2 ] );
+                builder.append( _vector[ 2 ] );
                 builder.append_comma();
-                builder.append_key_value( "w", _vector[ 3 ] );
-                builder.end_object();
+                builder.append( _vector[ 3 ] );
+                builder.end_array();
             },
             [&]( const cWeak_Ptr< cAsset_Meta >& _meta )
             {
-                builder.start_object();
-                builder.append_key_value( "asset_uuid", _meta.is_valid() ? _meta->GetUUID().ToString() : "" );
-                builder.append_comma();
-                builder.append_key_value( "asset_path", _meta.is_valid() ? _meta->GetPath().string() : "" );
-                builder.end_object();
+                if( _meta.is_valid() )
+                {
+                    // TODO: Add to resources.
+                    builder.append( _meta->GetUUID().ToString() );
+                }
+                else
+                    builder.append_null();
             }
         }( _value );
     }
 } // ::
 
-void cSerializedObject::create_json_array( json_builder_t& _builder )
+void cSerializedObject::create_json_array( json_builder_t& _builder, std::string& _type )
 {
     auto& builder = _builder;
-    
-    builder.start_array();
+
+    // We'll use our own builder to make the array values.
+    m_json_builder_.start_array();
 
     if( m_element_count_ > 0 )
     {
-        std::visit( [&]< class V >( V& _array ){
-            if constexpr( !std::is_same_v< V, std::monostate > )
+        std::string element_type{};
+
+        sVisitor visitor{
+            [&]< class V > requires ( !std::is_same_v< V, std::monostate > && !std::is_same_v< V, cSerializedObject > ) ( V*& _array )
             {
+                // Not nested. Will always share the same type
                 for( size_t i = 0; i < m_element_count_; i++ )
                 {
-                    handle_value( _builder, _array[ i ] );
+                    handle_value( _builder, _array[ i ], nullptr );
+
                     if( i != m_element_count_ - 1 )
                         builder.append_comma();
                 }
-            }
-        }, m_element_data_ );
-    }
+                _type = kTypeString< V > + std::to_string( m_element_count_ ) + ':';
+            },
+            [&]( cSerializedObject*& _array )
+            {
+                // The element is either a nested array or an object.
+                if( _array->IsArray() )
+                {
+                    // Nested arrays SHOULD always have the same leaf type. But the nested arrays are allowed to have different sizes.
+                    bool       shares_size  = true;
+                    const auto nested_length = _array[ 0 ].GetArraySize();
+                    handle_value( _builder, _array[ 0 ], &element_type );
+                    for( size_t i = 1; i < m_element_count_; i++ )
+                    {
+                        handle_value( _builder, _array[ i ],nullptr );
 
-    builder.end_array();
+                        if( shares_size && nested_length != _array[ i ].GetArraySize() )
+                            shares_size = false;
+
+                        if( i != m_element_count_ - 1 )
+                            builder.append_comma();
+                    }
+
+                    if( shares_size ) // [T]:[EN]: -> [T]:[EN]:[N]
+                        _type = element_type + std::to_string( m_element_count_ ) + ':';
+                    else
+                    {
+                        // We need to start at the type
+                        const auto element_size_open = element_type.find_last_of( ':', element_type.length() - 1 );
+                        // [T]:[EN]: -> [T]:x:[N]:
+                        _type = element_type.substr( 0, element_size_open + 1 ) + "x:" + std::to_string( m_element_count_ ) + ':';
+                    }
+                }
+                else
+                {
+                    for( size_t i = 0; i < m_element_count_; i++ )
+                    {
+                        _array[ i ].CreateJSON( _builder, nullptr );
+
+                        if( i != m_element_count_ - 1 )
+                            builder.append_comma();
+                    }
+                    // o:[N]:
+                    _type = "o:" + std::to_string( m_element_count_ ) + ':';
+                }
+            },
+            []( const std::monostate& )
+            {
+                // This shouldn't happen.
+                SK_BREAK;
+            },
+        };
+
+        std::visit( visitor, m_element_data_ );
+    }
+    else
+        _type = "n:0:";
+
+    m_json_builder_.end_array();
+    _builder.append_raw( m_json_builder_ );
 }
 
-void cSerializedObject::handle_info( json_builder_t& _builder, const sValueInfo& _info )
+void cSerializedObject::handle_info( json_builder_t& _builder, const sValueInfo& _info, const std::string& _key )
 {
     auto& info    = _info;
     auto& element = m_values_[ info.value_index ];
 
-    sVisitor visitor{
-        [&]( auto& _value )
+    std::visit( [ & ]< class V >( V& _value )
+    {
+        if constexpr( std::is_same_v< V, cSerializedObject > )
         {
-            handle_value( _builder, _value );
-        }
-    };
+            if( _value.IsArray() )
+            {
+                std::string type{};
 
-    std::visit( visitor, element );
+                _value.m_json_builder_.clear();
+                _value.create_json_array( _value.m_json_builder_, type );
+
+                _builder.escape_and_append_with_quotes( _key + ':' + type );
+                _builder.append_colon();
+
+                _builder.append_raw( _value.m_json_builder_ );
+            }
+            else // It's an object so we can skip the additional checking arrays need.
+            {
+                _builder.escape_and_append_with_quotes( _key + ":o:" );
+                _value.CreateJSON( _builder, nullptr );
+            }
+        }
+        else
+        {
+            _builder.escape_and_append_with_quotes( _key + ':' + kTypeString< V > );
+            handle_value( _builder, _value, nullptr );
+        }
+    }, element );
 }
 
 void cSerializedObject::handle_json_element( const simdjson::ondemand::value& _element, const std::string_view _key, Serialization::cResources* _resources )

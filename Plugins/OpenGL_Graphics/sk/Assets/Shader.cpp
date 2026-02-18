@@ -50,7 +50,6 @@ namespace sk::Assets
             SK_BREAK_IF( sk::Severity::kGraphics, length != 0,
                 TEXT( "Shader Info: {}", std::string_view{ buffer, static_cast< size_t >( length ) } ) )
         } );
-        
     } // cShader
 
     cShader::~cShader()

@@ -181,6 +181,7 @@ namespace sk
 		requires ( std::is_base_of_v< cAsset, Ty > && std::constructible_from< Ty, Args... > )
 		auto CreateAsset( std::string_view _name, const std::filesystem::path& _path, Args&&... _args ) -> std::pair< cShared_ptr< cAsset_Meta >, Ty* >
 		{
+			// TODO: Remove the need to specify the full path.
 			cShared_ptr< cAsset_Meta > meta = sk::MakeShared< cAsset_Meta >( _name, kTypeInfo< Ty > );
 			auto asset = SK_SINGLE( Ty, std::forward< Args >( _args )... );
 			meta->setAsset( asset );

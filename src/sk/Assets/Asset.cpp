@@ -56,7 +56,7 @@ void cAsset_Meta::Save()
 
     auto serialized_meta = Serialize();
     const auto json = serialized_meta.CreateJSON();
-    std::ofstream out_meta_file{ path.replace_extension( "skmeta" ), std::ofstream::out | std::ofstream::binary };
+    std::ofstream out_meta_file{ path.replace_extension( "skmeta" ), std::ofstream::binary | std::ofstream::out };
     out_meta_file << json;
     out_meta_file.close();
 

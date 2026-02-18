@@ -124,8 +124,8 @@ namespace sk
         
         // Creators
         [[ nodiscard ]]
-        auto CreateJSON  () -> std::string_view;
-        void CreateJSON  ( json_builder_t& _builder );
+        auto CreateJSON() -> std::string_view;
+        void CreateJSON( json_builder_t& _builder, std::string* _type );
         [[ nodiscard ]]
         auto CreateBinary() -> std::span< std::byte >;
         
@@ -205,8 +205,8 @@ namespace sk
         
     private:
         void create_json_object( json_builder_t& _builder );
-        void create_json_array( json_builder_t& _builder );
-        void handle_info( json_builder_t& _builder, const sValueInfo& _info );
+        void create_json_array( json_builder_t& _builder, std::string& _type );
+        void handle_info( json_builder_t& _builder, const sValueInfo& _info, const std::string& _key );
         void handle_json_element(const simdjson::ondemand::value& _element, std::string_view _key, Serialization::cResources* _resources );
 
         void _writeData( const cStringID& _name, value_t&& _value );

@@ -125,11 +125,11 @@ void cEditor::Create()
 	mat2.second->SetTexture( "mainTexture", toilet_t );
 
 
-	/*
+	//*
 	auto christopher_m       = list_1.GetAssetOfType< Assets::cMesh    >();
 	auto toilet_m            = list_2.GetAssetOfType< Assets::cMesh    >();
 
-	auto [ scene_meta, scene ] = asset_m.CreateAsset< cScene >( "Main Scene 2", "scenes/main_scene_2.skscene" );
+	auto [ scene_meta, scene ] = asset_m.CreateAsset< cScene >( "Main Scene", "scenes/main_scene.skscene" );
 	scene->create_object< Object::cCameraFlight >( "Camera Free Flight" )->setAsMain();
 
 	auto mesh = scene->create_object< Object::cObject >( "Mesh Test 2" );
@@ -222,7 +222,7 @@ void cEditor::Create()
 	sk::println( "Runs: {}    Total Time: {}    Average Time: {}    Fastest Time: {}    Slowest Time: {}", runs, total_spent, average_time, fastest_time, slowest_time );
 
 	cSceneManager::get().RegisterScene( scene_meta );
-	*/
+	/**/
 
     cSceneManager::get().update();
 

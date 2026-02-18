@@ -106,3 +106,6 @@ Day 11:
 - Due to switching from simdjson::dom to simdjson::ondemand which both work in completely different ways. The rewrite will take longer than initially expected.
 
 ---
+
+Day 12:
+- Continued with the rewrite which is continuing to be a headache but it is progressing forwards.
