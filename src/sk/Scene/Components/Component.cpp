@@ -10,9 +10,9 @@ using namespace sk::Object;
 iComponent::iComponent( cSerializedObject& _object )
 {
     _object.BeginRead( this );
-    m_uuid_ = cUUID::FromString( _object.ReadData< std::string >( "UUID" ).value() );
-    m_transform_ = sk::MakeShared< cTransform >( _object.ReadData< cSerializedObject >( "Transform" ).value().get() );
-    if( const auto children = _object.ReadData< cSerializedObject >( "children" ); children.has_value() )
+    m_uuid_ = cUUID::FromString( _object.ReadValue< std::string >( "UUID" ).value() );
+    m_transform_ = sk::MakeShared< cTransform >( _object.ReadValue< cSerializedObject >( "Transform" ).value().get() );
+    if( const auto children = _object.ReadValue< cSerializedObject >( "children" ); children.has_value() )
     {
         for( const auto arr = children.value().get().GetArray< cSerializedObject >(); auto& child : arr )
             child.ConstructSharedClass().Cast< iComponent >()->SetParent( get_shared() );
@@ -46,8 +46,8 @@ auto iComponent::Serialize() -> cSerializedObject
 {
     cSerializedObject object{ this };
     object.BeginWrite();
-    object.WriteData( "UUID", m_uuid_.ToString() );
-    object.WriteData( "Transform", m_transform_->Serialize() );
+    object.WriteValue( "UUID", m_uuid_.ToString() );
+    object.WriteValue( "Transform", m_transform_->Serialize() );
 
     std::vector< cSerializedObject > children;
     for( auto& child : m_children_ )
@@ -56,7 +56,7 @@ auto iComponent::Serialize() -> cSerializedObject
             children.emplace_back( std::move( child->Serialize() ) );
     }
     if( !children.empty() )
-        object.WriteData( "children", cSerializedObject::ConsumeArray( children.data(), children.size() ) );
+        object.WriteValue( "children", cSerializedObject::ConsumeArray( children.data(), children.size() ) );
     object.EndWrite();
 
     return object;

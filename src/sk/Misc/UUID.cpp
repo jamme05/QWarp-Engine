@@ -30,7 +30,7 @@ namespace sk
     {
         cSerializedObject object{};
         object.BeginWrite();
-        object.WriteData( "_value", ToString() );
+        object.WriteValue( "_value", ToString() );
         object.EndWrite();
         return object;
     }

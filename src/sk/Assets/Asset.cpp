@@ -25,13 +25,13 @@ cAsset_Meta::cAsset_Meta( cSerializedObject& _object )
     auto& types = Reflection::cType_Manager::get().GetTypes();
 
     _object.BeginRead();
-    m_uuid_ = cUUID::FromString( _object.ReadData< std::string >( "uuid" ).value() );
-    m_path_ = _object.ReadData< std::string >( "path" ).value();
-    m_name_ = _object.ReadData< std::string >( "asset_name" ).value();
-    m_ext_  = _object.ReadData< std::string >( "extension" ).value();
-    if( const auto itr = types.find( _object.ReadData< uint64_t >( "asset_type" ).value() ); itr != types.end() )
+    m_uuid_ = cUUID::FromString( _object.ReadValue< std::string >( "uuid" ).value() );
+    m_path_ = _object.ReadValue< std::string >( "path" ).value();
+    m_name_ = _object.ReadValue< std::string >( "asset_name" ).value();
+    m_ext_  = _object.ReadValue< std::string >( "extension" ).value();
+    if( const auto itr = types.find( _object.ReadValue< uint64_t >( "asset_type" ).value() ); itr != types.end() )
         m_asset_type_ = itr->second;
-    if( auto store_index = _object.ReadData< uint64_t >( "store_index" ); store_index.has_value() )
+    if( auto store_index = _object.ReadValue< uint64_t >( "store_index" ); store_index.has_value() )
     {
         m_flags_      |= kSharesPath;
         m_store_index_ = store_index.value();
@@ -360,7 +360,7 @@ void cAsset_Meta::dispatch_if_loaded( const dispatcher_t::listener_t& _listener 
 cAsset::cAsset( cSerializedObject& _object )
 {
     _object.BeginRead( this );
-    const auto val = _object.ReadData< std::string_view >( "UUID" ).value();
+    const auto val = _object.ReadValue< std::string_view >( "UUID" ).value();
     m_uuid_ = cUUID::FromString( val );
     _object.EndRead();
 }
@@ -368,7 +368,7 @@ cAsset::cAsset( cSerializedObject& _object )
 auto cAsset::Serialize() -> cSerializedObject
 {
     auto object = cSerializedObject( this );
-    object.WriteData( "UUID", GetUUID().ToString() );
+    object.WriteValue( "UUID", GetUUID().ToString() );
     return object;
 }
 
@@ -411,14 +411,14 @@ auto cAsset_Meta::Serialize() const -> cSerializedObject
 {
     // TODO: Construction using this
     cSerializedObject object{};
-    object.WriteData( "uuid", GetUUID().ToString() );
-    object.WriteData( "path", m_path_.string() );
-    object.WriteData( "asset_name", m_name_.string() );
-    object.WriteData( "extension", m_ext_.string() );
-    object.WriteData( "asset_type", m_asset_type_->hash.value() );
+    object.WriteValue( "uuid", GetUUID().ToString() );
+    object.WriteValue( "path", m_path_.string() );
+    object.WriteValue( "asset_name", m_name_.string() );
+    object.WriteValue( "extension", m_ext_.string() );
+    object.WriteValue( "asset_type", m_asset_type_->hash.value() );
     if( m_flags_ & kSharesPath )
     {
-        object.WriteData( "store_index", m_store_index_ );
+        object.WriteValue( "store_index", m_store_index_ );
     }
     object.EndWrite();
     return object;

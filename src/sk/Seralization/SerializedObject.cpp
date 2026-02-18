@@ -516,7 +516,7 @@ void cSerializedObject::BeginRead( iClass* _this )
     m_this_ = _this;
 }
 
-auto cSerializedObject::ReadDataRaw( const cStringID& _name ) -> std::optional< std::reference_wrapper< value_t > >
+auto cSerializedObject::ReadValueRaw( const cStringID& _name ) -> std::optional< std::reference_wrapper< value_t > >
 {
     // TODO: Print error
     auto pretty_name = cStringID{ MakeJsonSafeName( _name ) };
@@ -537,20 +537,24 @@ void cSerializedObject::EndRead()
     m_this_ = nullptr;
 }
 
-void cSerializedObject::BeginWrite( iClass* _this, const bool _reset )
+auto cSerializedObject::BeginWrite( iClass* _this, const bool _reset ) -> cSerializedObject&
 {
     m_this_ = _this;
     
     if( _reset )
         Reset();
+
+    return *this;
 }
 
-void cSerializedObject::AddBase( cSerializedObject&& _base_info )
+auto cSerializedObject::AddBase( cSerializedObject&& _base_info ) -> cSerializedObject&
 {
     m_bases_.emplace_back( std::move( _base_info ) );
+
+    return *this;
 }
 
-void cSerializedObject::EndWrite()
+auto cSerializedObject::EndWrite() -> cSerializedObject&&
 {
     ClearCache();
     
@@ -563,6 +567,8 @@ void cSerializedObject::EndWrite()
 
         info.offset += m_raw_offset_;
     }
+
+    return std::move( *this );
 }
 
 std::string cSerializedObject::MakeJsonSafeName( const std::string_view& _name )

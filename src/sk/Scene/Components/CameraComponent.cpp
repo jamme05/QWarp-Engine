@@ -26,21 +26,21 @@ namespace sk::Object::Components
 	: cComponent( _object.GetBase< iComponent >().value() )
 	{
 		_object.BeginRead( this );
-		m_type    = _object.ReadData< eType >( "type" ).value_or( eType::kPerspective );
-		m_layers_ = _object.ReadData< uint64_t >( "layers" ).value_or( 1 );
-		m_camera_settings.auto_resize = _object.ReadData< bool >( "auto_resize" ).value_or( true );
-		m_camera_settings.fov         = _object.ReadData< float >( "fov" ).value_or( 70.0f );
-		m_camera_settings.near   = _object.ReadData< float >( "near" ).value_or( 0.01f );
-		m_camera_settings.far    = _object.ReadData< float >( "far" ).value_or( 2000.0f );
+		m_type    = _object.ReadValue< eType >( "type" ).value_or( eType::kPerspective );
+		m_layers_ = _object.ReadValue< uint64_t >( "layers" ).value_or( 1 );
+		m_camera_settings.auto_resize = _object.ReadValue< bool >( "auto_resize" ).value_or( true );
+		m_camera_settings.fov         = _object.ReadValue< float >( "fov" ).value_or( 70.0f );
+		m_camera_settings.near   = _object.ReadValue< float >( "near" ).value_or( 0.01f );
+		m_camera_settings.far    = _object.ReadValue< float >( "far" ).value_or( 2000.0f );
 		if( m_camera_settings.auto_resize )
 			_autoUpdate();
 		else
 		{
-			m_camera_settings.aspect = _object.ReadData< float >( "aspect" ).value_or( 0.5f );
-			const auto viewport_pos          = _object.ReadData< cVector2i32 >( "viewport_pos" ).value_or( cVector2i64{} );
-			const auto viewport_size = _object.ReadData< cVector2u64 >( "viewport_size" ).value_or( cVector2u64{} );
-			const auto scissor_pos           = _object.ReadData< cVector2i32 >( "scissor_pos" ).value_or( cVector2i64{} );
-			const auto scissor_size  = _object.ReadData< cVector2u64 >( "scissor_size" ).value_or( cVector2u64{} );
+			m_camera_settings.aspect = _object.ReadValue< float >( "aspect" ).value_or( 0.5f );
+			const auto viewport_pos          = _object.ReadValue< cVector2i32 >( "viewport_pos" ).value_or( cVector2i64{} );
+			const auto viewport_size = _object.ReadValue< cVector2u64 >( "viewport_size" ).value_or( cVector2u64{} );
+			const auto scissor_pos           = _object.ReadValue< cVector2i32 >( "scissor_pos" ).value_or( cVector2i64{} );
+			const auto scissor_size  = _object.ReadValue< cVector2u64 >( "scissor_size" ).value_or( cVector2u64{} );
 
 			m_viewport = {
 				.x = viewport_pos.x,
@@ -115,17 +115,17 @@ namespace sk::Object::Components
 	{
 		cSerializedObject object( this );
 		object.AddBase( cComponent::Serialize() );
-		object.WriteData( "type",          static_cast< uint64_t >( m_type ) );
-		object.WriteData( "layers",        m_layers_ );
-		object.WriteData( "auto_resize",   m_camera_settings.auto_resize );
-		object.WriteData( "fov",           m_camera_settings.fov );
-		object.WriteData( "aspect",        m_camera_settings.aspect );
-		object.WriteData( "near_clip",     m_camera_settings.near );
-		object.WriteData( "far_clip",      m_camera_settings.far );
-		object.WriteData( "viewport_pos",  cVector2i64{ m_viewport.x, m_viewport.y } );
-		object.WriteData( "viewport_size", cVector2u64{ m_viewport.width, m_viewport.height } );
-		object.WriteData( "scissor_pos",   cVector2i64{ m_scissor.x, m_scissor.y } );
-		object.WriteData( "scissor_size",  cVector2u64{ m_scissor.width, m_scissor.height } );
+		object.WriteValue( "type",          static_cast< uint64_t >( m_type ) );
+		object.WriteValue( "layers",        m_layers_ );
+		object.WriteValue( "auto_resize",   m_camera_settings.auto_resize );
+		object.WriteValue( "fov",           m_camera_settings.fov );
+		object.WriteValue( "aspect",        m_camera_settings.aspect );
+		object.WriteValue( "near_clip",     m_camera_settings.near );
+		object.WriteValue( "far_clip",      m_camera_settings.far );
+		object.WriteValue( "viewport_pos",  cVector2i64{ m_viewport.x, m_viewport.y } );
+		object.WriteValue( "viewport_size", cVector2u64{ m_viewport.width, m_viewport.height } );
+		object.WriteValue( "scissor_pos",   cVector2i64{ m_scissor.x, m_scissor.y } );
+		object.WriteValue( "scissor_size",  cVector2u64{ m_scissor.width, m_scissor.height } );
 		object.EndWrite();
 		return object;
 	}

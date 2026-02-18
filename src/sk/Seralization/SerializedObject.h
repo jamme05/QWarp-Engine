@@ -140,50 +140,99 @@ namespace sk
 
         auto ConstructClass() -> iClass*;
         auto ConstructSharedClass() -> cShared_ptr< iClass >;
+        template< sk_class Ty >
+        auto ConstructClassAs() -> Ty*;
+        template< sk_class Ty >
+        auto ConstructSharedClassAs() -> cShared_ptr< Ty >;
 
         // Read
         void BeginRead( iClass* _this = nullptr );
-        auto ReadDataRaw( const cStringID& _name ) -> std::optional< std::reference_wrapper< value_t > >;
+        auto ReadValueRaw( const cStringID& _name ) -> std::optional< std::reference_wrapper< value_t > >;
         template< class Ty >
-        auto ReadData( const cStringID& _name )
+        auto ReadValue( const cStringID& _name )
         {
-            const auto data = ReadDataRaw( _name );
+            const auto data = ReadValueRaw( _name );
             if constexpr( std::is_same_v< Ty, cSerializedObject > )
             {
                 if( data.has_value() )
                 {
                     if( const auto res = std::get_if< cSerializedObject >( &data.value().get() ) )
-                        return std::optional{ std::ref( *res ) };
+                        return res;
                 }
-                return std::optional< std::reference_wrapper< cSerializedObject > >{ std::nullopt };
+                SK_FATAL( "Error: No value exists at name {}", _name.view() );
             }
             else if constexpr( std::is_same_v< Ty, std::string > || std::is_same_v< Ty, std::string_view > )
             {
                 if( data.has_value() )
                 {
                     if( const auto res = std::get_if< std::string >( &data.value().get() ) )
-                        return std::optional{ Ty{ *res } };
+                        return Ty{ *res };
                 }
-                return std::optional< Ty >{ std::nullopt };
+                SK_FATAL( "Error: No value exists at name {}", _name.view() );
             }
             else
             {
                 if( data.has_value() )
                 {
-                    return std::visit( []< class V >( V& _value ) -> std::optional< Ty >{
+                    return std::visit( []< class V >( V& _value ) -> Ty{
                         if constexpr( std::is_same_v< V, cSerializedObject > )
-                            return std::nullopt;
+                            return cSerializedObject{}; // Will not happen.
                         else if constexpr( std::is_same_v< V, Ty > )
-                            return std::optional< Ty >{ _value };
+                            return _value;
                         else if constexpr( std::is_convertible_v< V, Ty > )
                             return static_cast< Ty >( _value );
                         else if constexpr( std::is_integral_v< V > && std::is_enum_v< Ty > )
                             return static_cast< Ty >( _value );
                         else
-                            return std::nullopt;
+                        {
+                            SK_FATAL( "Error: Invalid type" );
+                        }
                     }, data.value().get() );
                 }
-                return std::optional< Ty >{ std::nullopt };
+                SK_FATAL( "Error: No value exists at name {}", _name.view() );
+            }
+        }
+
+        template< class Ty >
+        auto ReadValueOr( const cStringID& _name, Ty&& _fallback )
+        {
+            const auto data = ReadValueRaw( _name );
+            if constexpr( std::is_same_v< Ty, cSerializedObject > )
+            {
+                if( data.has_value() )
+                {
+                    if( const auto res = std::get_if< cSerializedObject >( &data.value().get() ) )
+                        return *res;
+                }
+                return std::forward< Ty >( _fallback );
+            }
+            else if constexpr( std::is_same_v< Ty, std::string > || std::is_same_v< Ty, std::string_view > )
+            {
+                if( data.has_value() )
+                {
+                    if( const auto res = std::get_if< std::string >( &data.value().get() ) )
+                        return Ty{ *res };
+                }
+                return std::forward< Ty >( _fallback );
+            }
+            else
+            {
+                if( data.has_value() )
+                {
+                    return std::visit( [&_fallback]< class V >( V& _value ) -> Ty{
+                        if constexpr( std::is_same_v< V, cSerializedObject > )
+                            return _fallback;
+                        else if constexpr( std::is_same_v< V, Ty > )
+                            return _value;
+                        else if constexpr( std::is_convertible_v< V, Ty > )
+                            return static_cast< Ty >( _value );
+                        else if constexpr( std::is_integral_v< V > && std::is_enum_v< Ty > )
+                            return static_cast< Ty >( _value );
+                        else
+                            return std::forward< Ty >( _fallback );
+                    }, data.value().get() );
+                }
+                return std::forward< Ty >( _fallback );
             }
         }
 
@@ -196,10 +245,10 @@ namespace sk
         void ReadIntoThis();
         
         // Write
-        void BeginWrite( iClass* _this = nullptr, bool _reset = false );
-        void AddBase( cSerializedObject&& _base_info );
-        void WriteData( const cStringID& _name, auto&& _value );
-        void EndWrite();
+        auto BeginWrite( iClass* _this = nullptr, bool _reset = false ) -> cSerializedObject&;
+        auto AddBase( cSerializedObject&& _base_info ) -> cSerializedObject&;
+        auto WriteValue( const cStringID& _name, auto&& _value ) -> cSerializedObject&;
+        auto EndWrite() -> cSerializedObject&&;
 
         static std::string MakeJsonSafeName( const std::string_view& _name );
         
@@ -284,6 +333,18 @@ namespace sk
         return GetBase( kTypeInfo< Ty > );
     }
 
+    template< sk_class Ty >
+    auto cSerializedObject::ConstructClassAs() -> Ty*
+    {
+        return static_cast< Ty* >( ConstructClass() );
+    }
+
+    template< sk_class Ty >
+    auto cSerializedObject::ConstructSharedClassAs() -> cShared_ptr< Ty >
+    {
+        return ConstructSharedClass().Cast< Ty >();
+    }
+
     template< class Ty >
     auto cSerializedObject::GetArray() -> std::span< Ty >
     {
@@ -303,9 +364,10 @@ namespace sk
         static_cast< class_type* >( m_this_ )->*Target.ptr = value;
     }
 
-    void cSerializedObject::WriteData( const cStringID& _name, auto&& _value )
+    auto cSerializedObject::WriteValue( const cStringID& _name, auto&& _value ) -> cSerializedObject&
     {
-        _writeData( _name, value_t{ std::move( _value ) } );
+        _writeData( _name, value_t{ std::forward< decltype( _value ) >( _value ) } );
+        return *this;
     }
 } // sk::
 

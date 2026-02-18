@@ -13,7 +13,7 @@ cSpinComponent::cSpinComponent( cSerializedObject& _object )
 : cComponent( _object.GetBase< iComponent >().value() )
 {
     _object.BeginRead( this );
-    m_speed_ = _object.ReadData< cVector3f >( "speed" ).value_or( kZero );
+    m_speed_ = _object.ReadValue< cVector3f >( "speed" ).value_or( kZero );
     _object.EndRead();
 }
 
@@ -30,7 +30,7 @@ auto cSpinComponent::Serialize() -> cSerializedObject
 {
     cSerializedObject object( this );
     object.AddBase( cComponent::Serialize() );
-    object.WriteData( "speed", cVector3d{ m_speed_ } );
+    object.WriteValue( "speed", cVector3d{ m_speed_ } );
     object.EndWrite();
     return object;
 }

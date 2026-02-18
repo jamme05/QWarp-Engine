@@ -25,8 +25,8 @@ namespace sk::Object
 	, iListener( Input::kStick | Input::kButton | Input::kKey | Input::kMouseButton | Input::kMouseRelative, 1, true )
 	{
 		_object.BeginRead( this );
-		m_speeds.x = _object.ReadData< float >( "movement_speed" ).value_or( 1.0f );
-		m_speeds.y = _object.ReadData< float >( "rotation_speed" ).value_or( 1.0f );
+		m_speeds.x = _object.ReadValue< float >( "movement_speed" ).value_or( 1.0f );
+		m_speeds.y = _object.ReadValue< float >( "rotation_speed" ).value_or( 1.0f );
 		_object.EndRead();
 	}
 
@@ -128,8 +128,8 @@ namespace sk::Object
 	{
 		cSerializedObject object( this );
 		object.AddBase( cCamera::Serialize() );
-		object.WriteData( "movement_speed", m_speeds.x );
-		object.WriteData( "rotation_speed", m_speeds.y );
+		object.WriteValue( "movement_speed", m_speeds.x );
+		object.WriteValue( "rotation_speed", m_speeds.y );
 		object.EndWrite();
 		return object;
 	}

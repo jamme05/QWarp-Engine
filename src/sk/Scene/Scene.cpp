@@ -15,7 +15,7 @@ namespace sk
 	{
 		_object.BeginRead( this );
 
-		for( auto& obj : _object.ReadData< cSerializedObject >( "objects" ).value().get().GetArray< cSerializedObject >() )
+		for( auto& obj : _object.ReadValue< cSerializedObject >( "objects" ).value().get().GetArray< cSerializedObject >() )
 		{
 			auto& object = m_objects.emplace_back( obj.ConstructSharedClass().Cast< Object::cObject >() );
 			object->m_parent_scene = this;
@@ -54,7 +54,7 @@ namespace sk
 		for( auto& obj : m_objects )
 			objects_vec.emplace_back( obj->Serialize() );
 
-		object.WriteData( "objects", cSerializedObject::ConsumeArray( objects_vec.data(), objects_vec.size() ) );
+		object.WriteValue( "objects", cSerializedObject::ConsumeArray( objects_vec.data(), objects_vec.size() ) );
 
 		object.EndWrite();
 		return object;
