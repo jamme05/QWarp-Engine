@@ -13,7 +13,7 @@ cSpinComponent::cSpinComponent( cSerializedObject& _object )
 : cComponent( _object.GetBase< iComponent >().value() )
 {
     _object.BeginRead( this );
-    m_speed_ = _object.ReadValue< cVector3f >( "speed" ).value_or( kZero );
+    m_speed_ = _object.ReadValueOr< cVector3f >( "speed", kZero );
     _object.EndRead();
 }
 

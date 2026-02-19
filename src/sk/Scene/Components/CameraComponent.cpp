@@ -26,21 +26,21 @@ namespace sk::Object::Components
 	: cComponent( _object.GetBase< iComponent >().value() )
 	{
 		_object.BeginRead( this );
-		m_type    = _object.ReadValue< eType >( "type" ).value_or( eType::kPerspective );
-		m_layers_ = _object.ReadValue< uint64_t >( "layers" ).value_or( 1 );
-		m_camera_settings.auto_resize = _object.ReadValue< bool >( "auto_resize" ).value_or( true );
-		m_camera_settings.fov         = _object.ReadValue< float >( "fov" ).value_or( 70.0f );
-		m_camera_settings.near   = _object.ReadValue< float >( "near" ).value_or( 0.01f );
-		m_camera_settings.far    = _object.ReadValue< float >( "far" ).value_or( 2000.0f );
+		m_type    = _object.ReadValueOr< eType >( "type", eType::kPerspective );
+		m_layers_ = _object.ReadValueOr< uint64_t >( "layers", 1 );
+		m_camera_settings.auto_resize = _object.ReadValueOr< bool >( "auto_resize", true );
+		m_camera_settings.fov         = _object.ReadValueOr< float >( "fov", 70.0f );
+		m_camera_settings.near   = _object.ReadValueOr< float >( "near", 0.01f );
+		m_camera_settings.far    = _object.ReadValueOr< float >( "far", 2000.0f );
 		if( m_camera_settings.auto_resize )
 			_autoUpdate();
 		else
 		{
-			m_camera_settings.aspect = _object.ReadValue< float >( "aspect" ).value_or( 0.5f );
-			const auto viewport_pos          = _object.ReadValue< cVector2i32 >( "viewport_pos" ).value_or( cVector2i64{} );
-			const auto viewport_size = _object.ReadValue< cVector2u64 >( "viewport_size" ).value_or( cVector2u64{} );
-			const auto scissor_pos           = _object.ReadValue< cVector2i32 >( "scissor_pos" ).value_or( cVector2i64{} );
-			const auto scissor_size  = _object.ReadValue< cVector2u64 >( "scissor_size" ).value_or( cVector2u64{} );
+			m_camera_settings.aspect = _object.ReadValueOr< float >( "aspect", 0.5f );
+			const auto viewport_pos          = _object.ReadValueOr< cVector2i32 >( "viewport_pos", cVector2i64{} );
+			const auto viewport_size = _object.ReadValueOr< cVector2u64 >( "viewport_size", cVector2u64{} );
+			const auto scissor_pos           = _object.ReadValueOr< cVector2i32 >( "scissor_pos", cVector2i64{} );
+			const auto scissor_size  = _object.ReadValueOr< cVector2u64 >( "scissor_size", cVector2u64{} );
 
 			m_viewport = {
 				.x = viewport_pos.x,

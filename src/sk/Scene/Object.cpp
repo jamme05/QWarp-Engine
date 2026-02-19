@@ -24,7 +24,7 @@ sk::Object::cObject::cObject( cSerializedObject& _object )
     m_uuid_ = cUUID::FromString( _object.ReadValueOr< std::string >( "uuid", "" ) );
     if( m_uuid_ == cUUID::kInvalid )
         m_uuid_ = GenerateRandomUUID();
-    m_root  = _object.ReadValue< cSerializedObject >( "root" )->ConstructSharedClassAs< iComponent >();
+    m_root  = _object.ReadValue< cSerializedObject* >( "root" )->ConstructSharedClassAs< iComponent >();
     SetLayer( _object.ReadValueOr< uint64_t >( "layer", 0 ) );
 
     m_root->SetObject( get_weak() );

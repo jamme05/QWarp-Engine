@@ -30,19 +30,15 @@ namespace sk
             cResources() = default;
             explicit cResources( simdjson::ondemand::object _object );
 
-            struct sEntry
-            {
-                size_t      index;
-                std::string json_string;
-            };
+            using type_map_t  = std::unordered_map< type_hash,     type_info_t >;
+            using asset_map_t = std::unordered_map< hash< cUUID >, cWeak_Ptr< cAsset_Meta > >;
 
-            using type_map_t  = std::unordered_map< type_hash,     sEntry >;
-            using asset_map_t = std::unordered_map< hash< cUUID >, sEntry >;
-
-            void StoreAsset( const cWeak_Ptr< cAsset_Meta >& _asset_id );
+            void StoreAsset( const cWeak_Ptr< cAsset_Meta >& _asset_meta );
             void StoreType ( const type_info_t& _type );
             auto GetAsset  ( const cUUID& _id ) -> cWeak_Ptr< cAsset_Meta >;
             auto GetType   ( uint64_t _id ) -> type_info_t;
+
+            auto CreateJSON() -> std::string_view;
 
             builder_t   builder;
 
@@ -90,7 +86,7 @@ namespace sk
         cSerializedObject( const cSerializedObject& _other );
         cSerializedObject( cSerializedObject&& _other ) noexcept;
         ~cSerializedObject() override;
-        
+
         cSerializedObject& operator=( const cSerializedObject& _other );
         cSerializedObject& operator=( cSerializedObject&& _other ) noexcept;
         
@@ -125,7 +121,6 @@ namespace sk
         // Creators
         [[ nodiscard ]]
         auto CreateJSON() -> std::string_view;
-        void CreateJSON( json_builder_t& _builder, std::string* _type );
         [[ nodiscard ]]
         auto CreateBinary() -> std::span< std::byte >;
         
@@ -148,92 +143,86 @@ namespace sk
         // Read
         void BeginRead( iClass* _this = nullptr );
         auto ReadValueRaw( const cStringID& _name ) -> std::optional< std::reference_wrapper< value_t > >;
+
         template< class Ty >
-        auto ReadValue( const cStringID& _name )
+        bool TryReadValue( const cStringID& _name, Ty& _out )
         {
             const auto data = ReadValueRaw( _name );
-            if constexpr( std::is_same_v< Ty, cSerializedObject > )
+            static_assert( !std::is_same_v< Ty, cSerializedObject >, "Error: Don't use a copy of a SerializedObject use a pointer instead." );
+            if constexpr( std::is_same_v< std::remove_const_t< Ty >, cSerializedObject* > )
             {
                 if( data.has_value() )
                 {
                     if( const auto res = std::get_if< cSerializedObject >( &data.value().get() ) )
-                        return res;
+                    {
+                        _out = res;
+                        return true;
+                    }
                 }
-                SK_FATAL( "Error: No value exists at name {}", _name.view() );
             }
             else if constexpr( std::is_same_v< Ty, std::string > || std::is_same_v< Ty, std::string_view > )
             {
                 if( data.has_value() )
                 {
                     if( const auto res = std::get_if< std::string >( &data.value().get() ) )
-                        return Ty{ *res };
+                    {
+                        _out = Ty{ *res };
+                        return true;
+                    }
                 }
-                SK_FATAL( "Error: No value exists at name {}", _name.view() );
             }
             else
             {
                 if( data.has_value() )
                 {
-                    return std::visit( []< class V >( V& _value ) -> Ty{
-                        if constexpr( std::is_same_v< V, cSerializedObject > )
-                            return cSerializedObject{}; // Will not happen.
+                    return std::visit( [&]< class V >( V& _value ) -> bool{
+                        if constexpr( std::is_same_v< Ty, V > && std::is_same_v< V, cSerializedObject > )
+                            return false;
                         else if constexpr( std::is_same_v< V, Ty > )
-                            return _value;
-                        else if constexpr( std::is_convertible_v< V, Ty > )
-                            return static_cast< Ty >( _value );
-                        else if constexpr( std::is_integral_v< V > && std::is_enum_v< Ty > )
-                            return static_cast< Ty >( _value );
-                        else
                         {
-                            SK_FATAL( "Error: Invalid type" );
+                            _out = _value;
+                            return true;
                         }
+                        else if constexpr( std::is_convertible_v< V, Ty > )
+                        {
+                            _out = static_cast< V >( _value );
+                            return true;
+                        }
+                        else if constexpr( std::is_integral_v< V > && std::is_enum_v< Ty > )
+                        {
+                            _out = static_cast< Ty >( _value );
+                            return true;
+                        }
+                        else
+                            return false;
                     }, data.value().get() );
                 }
-                SK_FATAL( "Error: No value exists at name {}", _name.view() );
             }
+            return false;
+        }
+
+        template< class Ty >
+        auto ReadValue( const cStringID& _name )
+        {
+            if( Ty result; TryReadValue( _name, result ) )
+                return result;
+            SK_FATAL( "Error: No value exists at name {}", _name.view() );
         }
 
         template< class Ty >
         auto ReadValueOr( const cStringID& _name, Ty&& _fallback )
         {
-            const auto data = ReadValueRaw( _name );
-            if constexpr( std::is_same_v< Ty, cSerializedObject > )
-            {
-                if( data.has_value() )
-                {
-                    if( const auto res = std::get_if< cSerializedObject >( &data.value().get() ) )
-                        return *res;
-                }
-                return std::forward< Ty >( _fallback );
-            }
-            else if constexpr( std::is_same_v< Ty, std::string > || std::is_same_v< Ty, std::string_view > )
-            {
-                if( data.has_value() )
-                {
-                    if( const auto res = std::get_if< std::string >( &data.value().get() ) )
-                        return Ty{ *res };
-                }
-                return std::forward< Ty >( _fallback );
-            }
-            else
-            {
-                if( data.has_value() )
-                {
-                    return std::visit( [&_fallback]< class V >( V& _value ) -> Ty{
-                        if constexpr( std::is_same_v< V, cSerializedObject > )
-                            return _fallback;
-                        else if constexpr( std::is_same_v< V, Ty > )
-                            return _value;
-                        else if constexpr( std::is_convertible_v< V, Ty > )
-                            return static_cast< Ty >( _value );
-                        else if constexpr( std::is_integral_v< V > && std::is_enum_v< Ty > )
-                            return static_cast< Ty >( _value );
-                        else
-                            return std::forward< Ty >( _fallback );
-                    }, data.value().get() );
-                }
-                return std::forward< Ty >( _fallback );
-            }
+            if( Ty result; TryReadValue( _name, result ) )
+                return result;
+            return std::forward< Ty >( _fallback );
+        }
+
+        template< class Ty >
+        auto ReadValueOr( const cStringID& _name, const Ty& _fallback )
+        {
+            if( Ty result; TryReadValue( _name, result ) )
+                return result;
+            return _fallback;
         }
 
         auto GetArraySize() const -> size_t;
@@ -252,22 +241,25 @@ namespace sk
 
         static std::string MakeJsonSafeName( const std::string_view& _name );
         
+        void createJsonInternal( json_builder_t& _builder, std::string* _type, Serialization::cResources* _resources = nullptr );
     private:
-        void create_json_object( json_builder_t& _builder );
-        void create_json_array( json_builder_t& _builder, std::string& _type );
-        void handle_info( json_builder_t& _builder, const sValueInfo& _info, const std::string& _key );
-        void handle_json_element(const simdjson::ondemand::value& _element, std::string_view _key, Serialization::cResources* _resources );
+        void _createJsonObject( json_builder_t& _builder );
+        void _createJsonArray( json_builder_t& _builder, std::string& _type );
+        void _handleInfo( json_builder_t& _builder, const sValueInfo& _info, const std::string& _key );
+        void _handleJsonElement(const simdjson::ondemand::value& _element, std::string_view _key );
 
         void _writeData( const cStringID& _name, value_t&& _value );
         
-        auto get_value_at_offset( type_info_t _type, size_t _offset ) -> std::optional< value_t >;
-        bool has_completed_json () const;
+        auto _getValueAtOffset( type_info_t _type, size_t _offset ) -> std::optional< value_t >;
+        bool _hasCompletedJson() const;
         
         using info_vec_t  = std::vector< sValueInfo >;
         using value_vec_t = std::vector< value_t >;
         using obj_vec_t   = std::vector< obj_t >;
         using buffer_t    = std::vector< std::byte >;
-        
+
+        Serialization::cResources* m_resources_ = nullptr;
+
         // Info
         type_info_t m_serialized_type_;
         // Temporary this
@@ -357,7 +349,7 @@ namespace sk
     {
         using class_type = decltype( Target )::class_type;
         
-        auto& value = get_value_at_offset( kTypeInfo< Value >, offset_of< Target >() );
+        auto& value = _getValueAtOffset( kTypeInfo< Value >, offset_of< Target >() );
         
         SK_ERR_IFN( value.has_value(), "Error: No value found." )
         
@@ -366,7 +358,24 @@ namespace sk
 
     auto cSerializedObject::WriteValue( const cStringID& _name, auto&& _value ) -> cSerializedObject&
     {
-        _writeData( _name, value_t{ std::forward< decltype( _value ) >( _value ) } );
+        using value_type = std::remove_cvref_t< decltype( _value ) >;
+
+        if constexpr( std::is_enum_v< value_type > )
+        {
+            if constexpr( std::is_signed_v< std::underlying_type_t< value_type > > )
+                _writeData( _name, value_t{ static_cast< int64_t >( std::forward< decltype( _value ) >( _value ) ) } );
+            else
+                _writeData( _name, value_t{ static_cast< uint64_t >( std::forward< decltype( _value ) >( _value ) ) } );
+        }
+        else if constexpr( std::is_integral_v< value_type > && !std::is_same_v< value_type, bool > )
+        {
+            if constexpr( std::is_signed_v< value_type > )
+                _writeData( _name, value_t{ static_cast< int64_t >( std::forward< decltype( _value ) >( _value ) ) } );
+            else
+                _writeData( _name, value_t{ static_cast< uint64_t >( std::forward< decltype( _value ) >( _value ) ) } );
+        }
+        else
+            _writeData( _name, value_t{ std::forward< decltype( _value ) >( _value ) } );
         return *this;
     }
 } // sk::

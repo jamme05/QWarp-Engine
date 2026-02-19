@@ -25,8 +25,8 @@ namespace sk::Object
 	, iListener( Input::kStick | Input::kButton | Input::kKey | Input::kMouseButton | Input::kMouseRelative, 1, true )
 	{
 		_object.BeginRead( this );
-		m_speeds.x = _object.ReadValue< float >( "movement_speed" ).value_or( 1.0f );
-		m_speeds.y = _object.ReadValue< float >( "rotation_speed" ).value_or( 1.0f );
+		m_speeds.x = _object.ReadValueOr( "movement_speed", 1.0f );
+		m_speeds.y = _object.ReadValueOr( "rotation_speed", 1.0f );
 		_object.EndRead();
 	}
 

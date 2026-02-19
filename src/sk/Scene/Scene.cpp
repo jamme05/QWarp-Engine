@@ -15,7 +15,7 @@ namespace sk
 	{
 		_object.BeginRead( this );
 
-		for( auto& obj : _object.ReadValue< cSerializedObject >( "objects" ).value().get().GetArray< cSerializedObject >() )
+		for( auto& obj : _object.ReadValue< cSerializedObject* >( "objects" )->GetArray< cSerializedObject >() )
 		{
 			auto& object = m_objects.emplace_back( obj.ConstructSharedClass().Cast< Object::cObject >() );
 			object->m_parent_scene = this;

@@ -25,16 +25,16 @@ cAsset_Meta::cAsset_Meta( cSerializedObject& _object )
     auto& types = Reflection::cType_Manager::get().GetTypes();
 
     _object.BeginRead();
-    m_uuid_ = cUUID::FromString( _object.ReadValue< std::string >( "uuid" ).value() );
-    m_path_ = _object.ReadValue< std::string >( "path" ).value();
-    m_name_ = _object.ReadValue< std::string >( "asset_name" ).value();
-    m_ext_  = _object.ReadValue< std::string >( "extension" ).value();
-    if( const auto itr = types.find( _object.ReadValue< uint64_t >( "asset_type" ).value() ); itr != types.end() )
+    m_uuid_ = cUUID::FromString( _object.ReadValueOr< std::string >( "uuid", "" ) );
+    m_path_ = _object.ReadValueOr< std::string >( "path", "" );
+    m_name_ = _object.ReadValueOr< std::string >( "asset_name", "" );
+    m_ext_  = _object.ReadValueOr< std::string >( "extension", "" );
+    if( const auto itr = types.find( _object.ReadValue< uint64_t >( "asset_type" ) ); itr != types.end() )
         m_asset_type_ = itr->second;
-    if( auto store_index = _object.ReadValue< uint64_t >( "store_index" ); store_index.has_value() )
+    if( uint64_t store_index; _object.TryReadValue( "store_index", store_index ) )
     {
         m_flags_      |= kSharesPath;
-        m_store_index_ = store_index.value();
+        m_store_index_ = store_index;
     }
     _object.EndRead();
 }
@@ -360,7 +360,7 @@ void cAsset_Meta::dispatch_if_loaded( const dispatcher_t::listener_t& _listener 
 cAsset::cAsset( cSerializedObject& _object )
 {
     _object.BeginRead( this );
-    const auto val = _object.ReadValue< std::string_view >( "UUID" ).value();
+    const auto val = _object.ReadValueOr< std::string_view >( "UUID", "" );
     m_uuid_ = cUUID::FromString( val );
     _object.EndRead();
 }

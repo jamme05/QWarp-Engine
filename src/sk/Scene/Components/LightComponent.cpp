@@ -34,14 +34,14 @@ cLightComponent::cLightComponent( cSerializedObject& _object )
 {
     _object.BeginRead( this );
     m_settings_ = {
-        .type              = _object.ReadValue< eType >( "type" ).value_or( eType::kDirectional ),
-        .casts_shadows     = _object.ReadValue< bool >( "casts_shadows" ).value_or( false ),
-        .shadow_resolution = _object.ReadValue< uint16_t >( "shadow_resolution" ).value_or( 256 ),
-        .color             = _object.ReadValue< cVector4f >( "color" ).value_or( kOne ),
-        .intensity         = _object.ReadValue< float >( "intensity" ).value_or( 1.0f ),
-        .radius            = _object.ReadValue< float >( "radius" ).value_or( 10.0f ),
-        .inner_angle       = _object.ReadValue< float >( "inner_angle" ).value_or( 45.0f ),
-        .outer_angle       = _object.ReadValue< float >( "outer_angle" ).value_or( 60.0f ),
+        .type              = _object.ReadValueOr( "type", eType::kDirectional ),
+        .casts_shadows     = _object.ReadValueOr( "casts_shadows", false ),
+        .shadow_resolution = _object.ReadValueOr< uint16_t >( "shadow_resolution", 256 ),
+        .color             = _object.ReadValueOr< cVector4f >( "color", kOne ),
+        .intensity         = _object.ReadValueOr( "intensity", 1.0f ),
+        .radius            = _object.ReadValueOr( "radius", 10.0f ),
+        .inner_angle       = _object.ReadValueOr( "inner_angle", 45.0f ),
+        .outer_angle       = _object.ReadValueOr( "outer_angle", 60.0f ),
     };
     _object.EndRead();
 
@@ -153,9 +153,9 @@ auto cLightComponent::Serialize() -> cSerializedObject
     cSerializedObject object( this );
     object.AddBase( cComponent::Serialize() );
     object.BeginWrite( this );
-    object.WriteValue( "type", static_cast< uint64_t >( GetType() ) );
+    object.WriteValue( "type", GetType() );
     object.WriteValue( "casts_shadows", m_settings_.casts_shadows );
-    object.WriteValue( "shadow_resolution", static_cast< uint64_t >( m_settings_.shadow_resolution ) );
+    object.WriteValue( "shadow_resolution", m_settings_.shadow_resolution );
     object.WriteValue( "color", cVector4d{ m_settings_.color } );
     object.WriteValue( "intensity", m_settings_.intensity );
     if( GetType() == eType::kPoint || GetType() == eType::kSpot )

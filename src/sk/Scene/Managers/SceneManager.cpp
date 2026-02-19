@@ -58,9 +58,8 @@ namespace
 		std::string json_str( size, 0 );
 		json_file.read( json_str.data(), json_str.size() );
 
-		simdjson::dom::parser parser;
-		simdjson::ondemand::parser parser2;
-		auto doc = parser2.iterate( json_str );
+		simdjson::ondemand::parser parser;
+		auto doc = parser.iterate( json_str );
 		auto object = cSerializedObject{ doc.get_object() };
 
 		meta->setAsset( SK_SINGLE( cScene, object ) );

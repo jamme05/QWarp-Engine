@@ -10,11 +10,11 @@ using namespace sk::Object;
 iComponent::iComponent( cSerializedObject& _object )
 {
     _object.BeginRead( this );
-    m_uuid_ = cUUID::FromString( _object.ReadValue< std::string >( "UUID" ).value() );
-    m_transform_ = sk::MakeShared< cTransform >( _object.ReadValue< cSerializedObject >( "Transform" ).value().get() );
-    if( const auto children = _object.ReadValue< cSerializedObject >( "children" ); children.has_value() )
+    m_uuid_ = cUUID::FromString( _object.ReadValue< std::string_view >( "UUID" ) );
+    m_transform_ = sk::MakeShared< cTransform >( *_object.ReadValue< cSerializedObject* >( "Transform" ) );
+    if( cSerializedObject* children; _object.TryReadValue( "children", children ) )
     {
-        for( const auto arr = children.value().get().GetArray< cSerializedObject >(); auto& child : arr )
+        for( const auto arr = children->GetArray< cSerializedObject >(); auto& child : arr )
             child.ConstructSharedClass().Cast< iComponent >()->SetParent( get_shared() );
     }
     _object.EndRead();

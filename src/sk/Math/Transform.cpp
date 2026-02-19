@@ -16,9 +16,9 @@ cTransform::cTransform( cVector3f _position, cVector3f _rotation, cVector3f _sca
 cTransform::cTransform( cSerializedObject& _object )
 {
     _object.BeginRead();
-    m_position_ = _object.ReadValue< cVector3f >( "Position" ).value();
-    m_rotation_ = _object.ReadValue< cVector3f >( "Rotation" ).value();
-    m_scale_    = _object.ReadValue< cVector3f >( "Scale" ).value();
+    m_position_ = _object.ReadValue< cVector3f >( "Position" );
+    m_rotation_ = _object.ReadValue< cVector3f >( "Rotation" );
+    m_scale_    = _object.ReadValue< cVector3f >( "Scale" );
     _object.EndRead();
 
     Update();
