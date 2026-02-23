@@ -204,12 +204,16 @@ namespace sk
 
 		if( auto asset = tryLoadAssetMetaFile( absolute_path ) )
 		{
-			asset->setPath( absolute_path );
-			registerAsset( asset );
+			// TODO: Remake the system and actually allow the asset metas to store multiple assets.
+			if( ( asset->GetFlags() & cAsset_Meta::eFlags::kSharesPath ) == 0 )
+			{
+				asset->setPath( absolute_path );
+				registerAsset( asset );
 
-			auto list = Assets::cAsset_List{};
-			list.AddAsset( asset );
-			return list;
+				auto list = Assets::cAsset_List{};
+				list.AddAsset( asset );
+				return list;
+			}
 		}
 
 		if( m_asset_path_map_.contains( absolute_path ) )

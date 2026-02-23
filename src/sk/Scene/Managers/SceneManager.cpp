@@ -50,7 +50,8 @@ namespace
 		}
 
 		simdjson::ondemand::parser parser;
-		auto doc = parser.iterate( simdjson::padded_string::load( _path.string() ) );
+		auto json = simdjson::padded_string::load( _path.string() );
+		auto doc = parser.iterate( json );
 		auto object = cSerializedObject{ doc.get_object() };
 
 		meta->setAsset( SK_SINGLE( cScene, object ) );

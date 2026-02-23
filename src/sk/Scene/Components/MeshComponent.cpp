@@ -24,8 +24,8 @@ cMeshComponent::cMeshComponent( cSerializedObject& _object )
 	_object.BeginRead( this );
 	m_mesh_     = _object.ReadValue< cWeak_Ptr< cAsset_Meta > >( "mesh" ).Lock();
 	m_material_ = _object.ReadValue< cWeak_Ptr< cAsset_Meta > >( "material" ).Lock();
-	m_mesh_ = cAsset_Manager::get().getAssetByName( "Cube.002" );
-	m_material_ = cAsset_Manager::get().getAssetByName( "Material Test" );
+	// m_mesh_ = cAsset_Manager::get().getAssetByName( "Cube.002" );
+	// m_material_ = cAsset_Manager::get().getAssetByName( "Material Test" );
 	_object.EndRead();
 }
 

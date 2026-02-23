@@ -31,11 +31,16 @@ cAsset_Meta::cAsset_Meta( cSerializedObject& _object )
     m_ext_  = _object.ReadValueOr< std::string >( "extension", "" );
     if( const auto itr = types.find( _object.ReadValue< uint64_t >( "asset_type" ) ); itr != types.end() )
         m_asset_type_ = itr->second;
+    if( uint_fast16_t flags; _object.TryReadValue( "flags", flags ) )
+        m_flags_.store( flags );
     if( uint64_t store_index; _object.TryReadValue( "store_index", store_index ) )
     {
         m_flags_      |= kSharesPath;
         m_store_index_ = store_index;
     }
+    else
+        m_store_index_ = 0;
+
     _object.EndRead();
 }
 
@@ -50,7 +55,7 @@ void cAsset_Meta::Save()
     if( !IsLoaded() )
         return;
 
-    /*
+    //*
     auto path = std::filesystem::path{ m_absolute_path_.view() };
 
     std::filesystem::create_directories( path.parent_path() );
@@ -64,7 +69,7 @@ void cAsset_Meta::Save()
     push_save_task();
     //*/
 
-    //*
+    /*
     const auto start = std::chrono::high_resolution_clock::now();
     auto to_save = m_asset_->Serialize();
     sk::println( "\n{}ms - Scene -> SerializableObject:",
@@ -133,7 +138,7 @@ auto cAsset_Meta::GetAsset() const -> cAsset*
     return m_asset_;
 }
 
-auto cAsset_Meta::GetFlags() const
+auto cAsset_Meta::GetFlags() const -> uint16_t
 {
     return m_flags_.load();
 }
@@ -372,7 +377,7 @@ auto cAsset::Serialize() -> cSerializedObject
 {
     auto object = cSerializedObject( this );
     object.WriteValue( "UUID", GetUUID().ToString() );
-    return object;
+    return object.EndWrite();
 }
 
 void cAsset_Meta::setPath( std::filesystem::path _path )
@@ -413,17 +418,23 @@ void cAsset_Meta::setAsset( cAsset* _asset )
 auto cAsset_Meta::Serialize() const -> cSerializedObject
 {
     // TODO: Construction using this
-    cSerializedObject object{};
-    object.WriteValue( "uuid", GetUUID().ToString() );
-    object.WriteValue( "path", m_path_.string() );
-    object.WriteValue( "asset_name", m_name_.string() );
-    object.WriteValue( "extension", m_ext_.string() );
-    object.WriteValue( "asset_type", m_asset_type_->hash.value() );
+    auto object = cSerializedObject{}
+    .WriteValue( "uuid", GetUUID().ToString() )
+    .WriteValue( "path", m_path_.string() )
+    .WriteValue( "asset_name", m_name_.string() )
+    .WriteValue( "extension", m_ext_.string() )
+    .WriteValue( "asset_type", m_asset_type_->hash.value() );
     if( m_flags_ & kSharesPath )
     {
         object.WriteValue( "store_index", m_store_index_ );
     }
-    object.EndWrite();
-    return object;
+    uint_fast16_t flags_to_store = 0;
+    if( m_flags_ & kSharesPath )
+        flags_to_store |= kSharesPath;
+
+    if( flags_to_store != 0 )
+        object.WriteValue( "flags_to_store", flags_to_store );
+
+    return object.EndWrite();
 }
 

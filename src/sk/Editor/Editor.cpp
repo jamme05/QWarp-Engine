@@ -31,6 +31,7 @@
 #include <imgui_internal.h>
 
 #include <chrono>
+#include <tuple>
 
 #ifdef SKAPE_EDITOR_AVAILABLE
 
@@ -41,6 +42,7 @@ using namespace std::chrono_literals;
 cEditor::cEditor()
 {
     Input::setLogInputs( false );
+
 
     cAsset_Manager::init();
 
@@ -116,16 +118,16 @@ void cEditor::Create()
 	const auto christopher_t = list_1.GetAssetOfType< Assets::cTexture >();
 	const auto toilet_t      = list_2.GetAssetOfType< Assets::cTexture >();
 
-	auto mat1 = asset_m.CreateAsset< Assets::cMaterial >( "Material Test", "materials/mat1.skmat1",
+	auto mat1 = asset_m.CreateAsset< Assets::cMaterial >( "Material Test", "materials/mat1.skmat",
 		Graphics::Utils::cShader_Link{ shader_vert, shader_frag } );
 	mat1.second->SetTexture( "mainTexture", christopher_t );
 
-	auto mat2 = asset_m.CreateAsset< Assets::cMaterial >( "Material Test 2", "materials/mat1.skmat2",
+	auto mat2 = asset_m.CreateAsset< Assets::cMaterial >( "Material Test 2", "materials/mat2.skmat",
 		Graphics::Utils::cShader_Link{ shader_vert, shader_frag } );
 	mat2.second->SetTexture( "mainTexture", toilet_t );
 
 
-	//*
+	/*
 	auto christopher_m       = list_1.GetAssetOfType< Assets::cMesh    >();
 	auto toilet_m            = list_2.GetAssetOfType< Assets::cMesh    >();
 
@@ -182,7 +184,7 @@ void cEditor::Create()
 	light_object->GetTransform().SetLocalPosition( { 0.0f, 5.0f, 0.0f } );
 
 	// Fuck it we ball
-	constexpr auto kGridWidth = 8;
+	constexpr auto kGridWidth = 5;
 	std::random_device rd;
 	std::mt19937 gen( rd() );
 	std::uniform_real_distribution dis( -25.0f, 25.0f );
@@ -199,7 +201,8 @@ void cEditor::Create()
 		}
 	}
 
-	constexpr auto runs = 1;
+	/*
+	constexpr auto runs = 10;
 
 	auto start = std::chrono::high_resolution_clock::now();
 	double fastest_time = std::numeric_limits< double >::max();
@@ -222,7 +225,7 @@ void cEditor::Create()
 	sk::println( "Runs: {}    Total Time: {}    Average Time: {}    Fastest Time: {}    Slowest Time: {}", runs, total_spent, average_time, fastest_time, slowest_time );
 
 	cSceneManager::get().RegisterScene( scene_meta );
-	/**/
+	//*/
 
     cSceneManager::get().update();
 

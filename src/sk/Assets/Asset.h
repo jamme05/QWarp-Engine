@@ -101,7 +101,7 @@ namespace sk
 		template< reflected Ty >
 		auto GetAsset() -> Ty*;
 		// Gets the flags this asset has. Check eFlags for details.
-		auto GetFlags() const;
+		auto GetFlags() const -> uint16_t;
 		// Gets the type info for the asset
 		auto GetType () const -> type_info_t;
 		// Gets the type info for the asset
