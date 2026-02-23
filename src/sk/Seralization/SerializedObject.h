@@ -38,6 +38,8 @@ namespace sk
             auto GetAsset  ( const cUUID& _id ) -> cWeak_Ptr< cAsset_Meta >;
             auto GetType   ( uint64_t _id ) -> type_info_t;
 
+            bool IsEmpty() const;
+
             auto CreateJSON() -> std::string_view;
 
             builder_t   builder;
@@ -379,5 +381,7 @@ namespace sk
         return *this;
     }
 } // sk::
+
+constexpr bool whatthefuck = std::is_convertible_v< sk::cSerializedObject, sk::iClass >;
 
 SK_DECLARE_CLASS( sk::SerializedObject )

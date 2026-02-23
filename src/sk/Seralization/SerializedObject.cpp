@@ -13,7 +13,7 @@ using namespace sk;
 
 namespace
 {
-    auto get_meta_value( simdjson::ondemand::object _object ) -> cWeak_Ptr< cAsset_Meta >
+    auto get_meta_value( simdjson::ondemand::object _object ) -> std::pair< cUUID, cWeak_Ptr< cAsset_Meta > >
     {
         auto& manager = cAsset_Manager::get();
 
@@ -31,16 +31,38 @@ namespace
             meta = manager.getAsset( uuid );
 
         if( meta == nullptr )
-            meta = manager.GetAssetByPath( std::filesystem::path{ _object.find_field( "path" ).get_string().value() } );
+        {
+            _object.reset();
+            auto name = _object.find_field( "name" ).get_string().value();
+            _object.reset();
+            for( auto& asset : manager.GetAssetsByPath( _object.find_field( "path" ).get_string().value() ) )
+            {
+                if( asset->GetName().view() == name )
+                {
+                    meta = asset;
+                    break;
+                }
+            }
+        }
 
-        return meta;
+        return std::make_pair( uuid, meta );
+    }
+
+    auto make_asset_path( const cAsset_Meta& _meta )
+    {
+        auto path = std::string{ _meta.GetPath() };
+        path += '.';
+        path.append( _meta.GetExtension() );
+
+        std::ranges::replace( path, '\\', '/' );
+
+        return path;
     }
 } // ::
 
 Serialization::cResources::cResources( simdjson::ondemand::object _object )
 {
     auto& global_types = Reflection::cType_Manager::get().GetTypes();
-    auto& asset_manager = cAsset_Manager::get();
 
     for( auto field : _object )
     {
@@ -57,8 +79,8 @@ Serialization::cResources::cResources( simdjson::ondemand::object _object )
         {
             for( auto array = field.value().get_array().value(); auto element : array )
             {
-                if( auto meta = get_meta_value( element.get_object() ); meta != nullptr )
-                    assets.emplace( meta->GetUUID(), meta );
+                if( auto [ uuid, meta ] = get_meta_value( element.get_object() ); meta != nullptr )
+                    assets.emplace( uuid, meta );
             }
         }
     }
@@ -94,6 +116,11 @@ auto Serialization::cResources::GetType( const uint64_t _id ) -> type_info_t
     return nullptr;
 }
 
+bool Serialization::cResources::IsEmpty() const
+{
+    return assets.empty() && types.empty();
+}
+
 auto Serialization::cResources::CreateJSON() -> std::string_view
 {
     builder.start_object();
@@ -101,21 +128,37 @@ auto Serialization::cResources::CreateJSON() -> std::string_view
     builder.escape_and_append_with_quotes( "types" );
     builder.append_colon();
     builder.start_array();
+    auto next_type = types.begin();
     for( const auto& type : types | std::views::values )
     {
-        builder.append_key_value( "id", type->hash );
+        builder.start_object();
+        builder.append_key_value( "id", type->hash.value() );
+        builder.append_comma();
         builder.append_key_value( "name", type->name );
+        builder.end_object();
+
+        if( ++next_type != types.end() )
+            builder.append_comma();
     }
     builder.end_array();
+    builder.append_comma();
 
     builder.escape_and_append_with_quotes( "assets" );
     builder.append_colon();
     builder.start_array();
+    auto next_asset = assets.begin();
     for( const auto& asset : assets | std::views::values )
     {
+        builder.start_object();
         builder.append_key_value( "uuid", asset->GetUUID().ToString() );
+        builder.append_comma();
         builder.append_key_value( "name", asset->GetName() );
-        builder.append_key_value( "path", asset->GetPath() );
+        builder.append_comma();
+        builder.append_key_value( "path", make_asset_path( *asset ) );
+        builder.end_object();
+
+        if( ++next_asset != assets.end() )
+            builder.append_comma();
     }
     builder.end_array();
 
@@ -136,37 +179,64 @@ cSerializedObject::cSerializedObject( simdjson::ondemand::object _object, Serial
 {
     const bool owns_resources = _resources == nullptr;
 
-    m_resources_ = _resources;
+    if( owns_resources )
+    {
+        if( auto resource_field = _object.find_field_unordered( ":resources:" ); resource_field.has_value() )
+        {
+            m_resources_ = new Serialization::cResources( resource_field.value().get_object() );
+        }
+        else
+            m_resources_ = new Serialization::cResources();
+    }
+    else
+        m_resources_ = _resources;
+
+    _object.reset();
 
     for( auto field : _object )
     {
+        if( field.error() )
+        {
+            SK_BREAK;
+            break;
+        }
         // The JSON should always be in this order.
-
-        if( auto key = field.key().value(); owns_resources && key == ":resources:" )
-            m_resources_ = new Serialization::cResources( field.value().get_object() );
-        else if( key == ":type:" )
+        if( auto key = field.key().value(); key == ":type:" )
         {
             if( auto value = field.value(); !value.is_null() )
                 m_serialized_type_ = m_resources_->GetType( value.get_uint64() );
         }
         else if( key == ":bases:" ) // The object will not contain any base if there isn't any.
-            m_bases_.emplace_back( field.value().get_object(), m_resources_ );
-        else
+        {
+            for( auto element : field.value().get_array() )
+                m_bases_.emplace_back( element.get_object(), m_resources_ );
+        }
+        else if( key[ 0 ] != ':' ) // Filter out any extra internal fields.
         {
             // Handle data members
             sValueInfo info{};
             size_t length = 0;
+            size_t end    = 0;
             for( auto start = key.raw(); *start != ':'; start++ )
                 length++;
+            for( auto start = key.raw(); *start != '"'; start++ )
+                end++;
 
-            info.name        = std::string_view{ key.raw(), length };
-            info.value_index = m_values_.size();
+            info.name           = std::string_view{ key.raw(), length };
+            info.json_safe_name = info.name;
+            info.value_index    = m_values_.size();
 
             // We'll only need the inline info for the element.
-            _handleJsonElement( field.value().value(), std::string_view{ key.raw() + length } );
+            _handleJsonElement( field.value().value(), std::string_view{ key.raw() + length, end - length } );
 
             m_info_.emplace_back( std::move( info ) );
         }
+    }
+
+    if( owns_resources )
+    {
+        delete m_resources_;
+        m_resources_ = nullptr;
     }
 }
 
@@ -299,16 +369,16 @@ namespace
         case 'a': return eValueType::kAsset;
 
         // Array
-        case 'x': return eValueType::kArray;
-        case '0': return eValueType::kArray;
-        case '1': return eValueType::kArray;
-        case '2': return eValueType::kArray;
-        case '3': return eValueType::kArray;
-        case '4': return eValueType::kArray;
-        case '5': return eValueType::kArray;
-        case '6': return eValueType::kArray;
-        case '7': return eValueType::kArray;
-        case '8': return eValueType::kArray;
+        case 'x':
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
         case '9': return eValueType::kArray;
 
         // Object
@@ -346,12 +416,12 @@ namespace
         if( _key[ _key.length() - 2 ] == 'x' )
             return std::make_pair( std::numeric_limits< size_t >::max(), std::string_view{ _key.data(), _key.length() - 3 } );
 
-        const auto start = _key.find_last_not_of( ':', _key.length() - 2 );
+        const auto start = _key.find_last_of( ':', _key.length() - 2 ) + 1;
         const auto end   = _key.length() - 1;
 
         uint32_t value;
         if( std::from_chars( _key.data() + start, _key.data() + end, value ).ec == std::errc{} )
-            return std::make_pair( value, std::string_view{ _key.data(), start - 1 } );
+            return std::make_pair( value, std::string_view{ _key.data(), start } );
 
         return std::make_pair( std::numeric_limits< size_t >::max(), std::string_view{ _key.data(), start - 1 } );
     }
@@ -370,11 +440,11 @@ namespace
         case eValueType::kInt2:
         case eValueType::kInt3:
         case eValueType::kInt4:    return handle_vector_value< int64_t >( _element, _type - eValueType::kInt );
-        case eValueType::kUInt:    return _element.get_int64();
+        case eValueType::kUInt:    return _element.get_uint64();
         case eValueType::kUInt2:
         case eValueType::kUInt3:
         case eValueType::kUInt4:   return handle_vector_value< uint64_t >( _element, _type - eValueType::kUInt );
-        case eValueType::kDouble:  return _element.get_int64();
+        case eValueType::kDouble:  return _element.get_double();
         case eValueType::kDouble2:
         case eValueType::kDouble3:
         case eValueType::kDouble4: return handle_vector_value< double >( _element, _type - eValueType::kDouble );
@@ -407,9 +477,6 @@ namespace
 
 cSerializedObject::cSerializedObject( simdjson::ondemand::array _array, size_t _length, const std::string_view& _key, Serialization::cResources* _resources )
 {
-    using element_type = simdjson::ondemand::json_type;
-    using number_type  = simdjson::ondemand::number_type;
-
     if( _length == std::numeric_limits< size_t >::max() )
         _length = _array.count_elements();
 
@@ -579,16 +646,28 @@ auto cSerializedObject::CreateJSON() -> std::string_view
     json_builder_t temp_builder{};
     createJsonInternal( temp_builder, nullptr );
 
+    m_json_builder_.start_object();
 
+    if( !m_resources_->IsEmpty() )
+    {
+        m_json_builder_.escape_and_append_with_quotes( ":resources:" );
+        m_json_builder_.append_colon();
+        m_json_builder_.append_raw( m_resources_->CreateJSON() );
+        m_json_builder_.append_comma();
+    }
+    m_json_builder_.append_raw( temp_builder );
 
+    m_json_builder_.end_object();
     delete m_resources_;
+    m_resources_ = nullptr;
 
     return m_json_builder_;
 }
 
 void cSerializedObject::createJsonInternal( json_builder_t& _builder, std::string* _type, Serialization::cResources* _resources )
 {
-    if( _resources != nullptr )
+    const bool owns_resources = _resources == nullptr;
+    if( !owns_resources )
         m_resources_ = _resources;
 
     // As we're mainly going to be recreating the structure from the ground up. Only cache if the user explicitly creates the JSON for an object.
@@ -596,13 +675,16 @@ void cSerializedObject::createJsonInternal( json_builder_t& _builder, std::strin
     {
         if( !IsArray() )
         {
-            _builder.start_object();
+            if( !owns_resources )
+                _builder.start_object();
 
             // :type: - uint64_t
             if( m_serialized_type_ != nullptr )
             {
-                _builder.append_key_value( ":type:", m_serialized_type_->hash );
-                _builder.append_comma();
+                m_resources_->StoreType( m_serialized_type_ );
+                _builder.append_key_value( ":type:", m_serialized_type_->hash.value() );
+                if( !m_bases_.empty() || !m_info_.empty() )
+                    _builder.append_comma();
             }
 
             // :bases: - SerializedObject[]
@@ -614,18 +696,20 @@ void cSerializedObject::createJsonInternal( json_builder_t& _builder, std::strin
 
                 for( size_t i = 0; i < m_bases_.size(); i++ )
                 {
-                    m_bases_[ i ].createJsonInternal( _builder, nullptr );
+                    m_bases_[ i ].createJsonInternal( _builder, nullptr, m_resources_ );
                     if( i != m_bases_.size() - 1 )
                         _builder.append_comma();
                 }
 
                 _builder.end_array(); // Bases end
-                _builder.append_comma();
+                if( !m_info_.empty() )
+                    _builder.append_comma();
             }
 
             _createJsonObject( _builder );
 
-            _builder.end_object();
+            if( !owns_resources )
+                _builder.end_object();
         }
         else
             _createJsonArray( _builder, *_type );
@@ -636,6 +720,9 @@ void cSerializedObject::createJsonInternal( json_builder_t& _builder, std::strin
         SK_BREAK;
         _builder.append_raw( m_json_builder_ );
     }
+
+    if( !owns_resources )
+        m_resources_ = nullptr;
 }
 
 auto cSerializedObject::CreateBinary() -> std::span< std::byte >
@@ -782,7 +869,7 @@ void cSerializedObject::_createJsonObject( json_builder_t& _builder )
 
 namespace
 {
-    void handle_value( cSerializedObject::json_builder_t& _builder, auto& _value, std::string* _type )
+    void handle_value( cSerializedObject::json_builder_t& _builder, auto& _value, std::string* _type, Serialization::cResources* _resources )
     {
         auto& builder = _builder;
 
@@ -852,7 +939,7 @@ namespace
             {
                 if( _meta.is_valid() )
                 {
-                    // TODO: Add to resources.
+                    _resources->StoreAsset( _meta );
                     builder.append( _meta->GetUUID().ToString() );
                 }
                 else
@@ -879,7 +966,7 @@ void cSerializedObject::_createJsonArray( json_builder_t& _builder, std::string&
                 // Not nested. Will always share the same type
                 for( size_t i = 0; i < m_element_count_; i++ )
                 {
-                    handle_value( _builder, _array[ i ], nullptr );
+                    handle_value( _builder, _array[ i ], nullptr, m_resources_ );
 
                     if( i != m_element_count_ - 1 )
                         builder.append_comma();
@@ -894,10 +981,10 @@ void cSerializedObject::_createJsonArray( json_builder_t& _builder, std::string&
                     // Nested arrays SHOULD always have the same leaf type. But the nested arrays are allowed to have different sizes.
                     bool       shares_size  = true;
                     const auto nested_length = _array[ 0 ].GetArraySize();
-                    handle_value( _builder, _array[ 0 ], &element_type );
+                    handle_value( _builder, _array[ 0 ], &element_type, m_resources_ );
                     for( size_t i = 1; i < m_element_count_; i++ )
                     {
-                        handle_value( _builder, _array[ i ],nullptr );
+                        handle_value( _builder, _array[ i ],nullptr, m_resources_ );
 
                         if( shares_size && nested_length != _array[ i ].GetArraySize() )
                             shares_size = false;
@@ -920,7 +1007,7 @@ void cSerializedObject::_createJsonArray( json_builder_t& _builder, std::string&
                 {
                     for( size_t i = 0; i < m_element_count_; i++ )
                     {
-                        _array[ i ].createJsonInternal( _builder, nullptr );
+                        _array[ i ].createJsonInternal( _builder, nullptr, m_resources_ );
 
                         if( i != m_element_count_ - 1 )
                             builder.append_comma();
@@ -942,7 +1029,8 @@ void cSerializedObject::_createJsonArray( json_builder_t& _builder, std::string&
         _type = "n:0:";
 
     m_json_builder_.end_array();
-    _builder.append_raw( m_json_builder_ );
+    if( &_builder != &m_json_builder_ )
+        _builder.append_raw( m_json_builder_ );
 }
 
 void cSerializedObject::_handleInfo( json_builder_t& _builder, const sValueInfo& _info, const std::string& _key )
@@ -959,7 +1047,9 @@ void cSerializedObject::_handleInfo( json_builder_t& _builder, const sValueInfo&
                 std::string type{};
 
                 _value.m_json_builder_.clear();
+                _value.m_resources_ = m_resources_;
                 _value._createJsonArray( _value.m_json_builder_, type );
+                _value.m_resources_ = nullptr;
 
                 _builder.escape_and_append_with_quotes( _key + ':' + type );
                 _builder.append_colon();
@@ -969,13 +1059,15 @@ void cSerializedObject::_handleInfo( json_builder_t& _builder, const sValueInfo&
             else // It's an object so we can skip the additional checking arrays need.
             {
                 _builder.escape_and_append_with_quotes( _key + ":o:" );
-                _value.createJsonInternal( _builder, nullptr );
+                _builder.append_colon();
+                _value.createJsonInternal( _builder, nullptr, m_resources_ );
             }
         }
         else
         {
             _builder.escape_and_append_with_quotes( _key + ':' + kTypeString< V > );
-            handle_value( _builder, _value, nullptr );
+            _builder.append_colon();
+            handle_value( _builder, _value, nullptr, m_resources_ );
         }
     }, element );
 }

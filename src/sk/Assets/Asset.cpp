@@ -50,6 +50,7 @@ void cAsset_Meta::Save()
     if( !IsLoaded() )
         return;
 
+    /*
     auto path = std::filesystem::path{ m_absolute_path_.view() };
 
     std::filesystem::create_directories( path.parent_path() );
@@ -61,14 +62,16 @@ void cAsset_Meta::Save()
     out_meta_file.close();
 
     push_save_task();
+    //*/
 
-    /*
+    //*
     const auto start = std::chrono::high_resolution_clock::now();
+    auto to_save = m_asset_->Serialize();
     sk::println( "\n{}ms - Scene -> SerializableObject:",
         std::chrono::duration_cast< std::chrono::duration< float, std::milli > >( std::chrono::high_resolution_clock::now() - start ).count() );
 
     const auto to_json_start = std::chrono::high_resolution_clock::now();
-    auto asset_json = to_save.CreateJSON();
+    auto asset_json = std::string{ to_save.CreateJSON() };
     sk::println( "{}ms - SerializableObject -> JSON:",
         std::chrono::duration_cast< std::chrono::duration< float, std::milli > >( std::chrono::high_resolution_clock::now() - to_json_start ).count() );
 
@@ -81,9 +84,9 @@ void cAsset_Meta::Save()
         std::chrono::duration_cast< std::chrono::duration< float, std::milli > >( std::chrono::high_resolution_clock::now() - file_start ).count() );
 
     const auto json_parse_start = std::chrono::high_resolution_clock::now();
-    simdjson::dom::parser parser{};
-    const auto result = parser.parse( asset_json );
-    sk::println( "{}ms - Parse JSON",
+    simdjson::ondemand::parser parser{};
+    auto result = parser.iterate( simdjson::pad( asset_json ) );
+    sk::println( "{}ms - Start JSON Parse",
         std::chrono::duration_cast< std::chrono::duration< float, std::milli > >( std::chrono::high_resolution_clock::now() - json_parse_start ).count() );
 
     const auto serialize_start = std::chrono::high_resolution_clock::now();
@@ -97,7 +100,7 @@ void cAsset_Meta::Save()
         std::chrono::duration_cast< std::chrono::duration< float, std::milli > >( std::chrono::high_resolution_clock::now() - reconstruct_start ).count() );
 
     sk::println( "{}ms - Total time", std::chrono::duration_cast< std::chrono::duration< float, std::milli > >( std::chrono::high_resolution_clock::now() - start ).count() );
-    */
+    //*/
 }
 
 bool cAsset_Meta::IsLoading() const

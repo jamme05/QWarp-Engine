@@ -638,17 +638,10 @@ namespace sk
 		if( !std::filesystem::exists( _path ) )
 			return nullptr;
 
-		std::ifstream json_file{ _path, std::ifstream::in | std::ifstream::binary | std::ifstream::ate };
-		json_file.seekg( 0, json_file.end );
-
-		const size_t size = json_file.tellg();
-		json_file.seekg( 0, json_file.beg );
-
-		std::string json_str( size, 0 );
-		json_file.read( json_str.data(), json_str.size() );
-
 		simdjson::ondemand::parser parser;
+		const auto json_str = simdjson::padded_string::load( _path.string() );
 		auto doc = parser.iterate( json_str );
+
 		auto object = cSerializedObject{ doc.get_object() };
 		auto meta = sk::MakeShared< cAsset_Meta >( object );
 
