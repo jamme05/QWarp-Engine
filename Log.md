@@ -8,7 +8,7 @@ Day \*:
 
 ---
 
-Day 1:
+Day 1 (2/2):
 - A bit sick but started work towards the end of the day.
 - Found a couple of other bugs which surprisingly didn't cause any issues on Nvidia but would've been really annoying to find out of nowhere.
 - Started with the cmake requirements for adding multiple runtime projects so the editor can be its own runtime.
@@ -18,7 +18,7 @@ Day 1:
 
 ---
 
-Day 2:
+Day 2 (3/2):
 - Changed the target dir for the binaries to [Project Root]/bin to make dlls easier to manage.
 - For the future I will attempt to use install for managin this, but for now this works well enough.
 - Added ImGui
@@ -28,7 +28,7 @@ Day 2:
 
 ---
 
-Day 3:
+Day 3 (4/2):
 - Spent most of the day debugging and fixing the viewport.
 - Created an interface named iSurface to allow a me to have "virtual" windows, making the viewport easier to control whilst running on the same render pipeline as the game would.
 - I also made the Editor folder not build if the Editor runtime wasn't included in the cmake config. As it would be unecessary overhead when building the game only.
@@ -39,7 +39,7 @@ Day 3:
 
 ---
 
-Day 4:
+Day 4 (5/2):
 - Started the day fighting with CLion trying to get the class template to be how I want it to be.
 - Learned some Apache Velocity and was able to achive it 1.5 hours later.
 - Added a context menu helper class that allows easier creations of context menus.
@@ -50,7 +50,7 @@ Day 4:
 
 ---
 
-Day 5:
+Day 5 (6/2):
 - Fixed the LoadFolder function in my asset manager to fully load in the project folder.
 - With this I also removed the manual loadFile calls.
 - Made sure that all paths area treated the same.
@@ -59,14 +59,14 @@ Day 5:
 
 ---
 
-Day 6:
+Day 6 (9/2):
 - Started fixing the serialization system I had begun before this assignment.
 - Realized I was unable to get my own runtime type info from reflected class instances. So I fixed it.
 - Made a template for how the serialized object and worked on getting the json exporter for it correct.
 
 ---
 
-Day 7:
+Day 7 (10/2):
 - Continued working on designing and implementing the scene -> json converting.
 - Got a basic scene saved and tweaked the outputs to better fix my needs.
 - Added a simple way to with runtime types be able to construct a class using a serialization object.
@@ -77,7 +77,7 @@ Day 7:
 
 ---
 
-Day 8:
+Day 8 (11/2):
 - Fixed a way to serialize asset references. But it needs more fallbacks to make sure that it always gets the asset.
 - Made all the objects and components serializable.
 - SCENE IS SAVEABLE AND LOADABLE YIPPIE
@@ -86,7 +86,7 @@ Day 8:
 
 ---
 
-Day 9:
+Day 9 (12/2):
 - Spent the early part of the day trying to track down the memory corruption. Ended up finding out it was from the scene getting recreated.
 - When trying to dig deeper into the reason for the corruption I found out that I was leaking memory so started working on fixing that.
 - Did decrease the number of memory leaks and only have a few remaining.
@@ -94,18 +94,46 @@ Day 9:
 
 ---
 
-Day 10:
+Day 10 (13/2):
 - Spent the first part of the day getting the scene to work as a valid asset. As well as for storing the metadata.
 - Spent the next part of the day trying to get scenes to safely open and close which I've made progress on.
 
 ---
 
-Day 11:
+Day 11 (16/2):
 - Continued work on getting Jolt integrated as it'll be required for raycasts in the editor.
 - Whilst working on the Jolt integration I realized a way to optimize the JSON so I moved to that for the rest of the day.
 - Due to switching from simdjson::dom to simdjson::ondemand which both work in completely different ways. The rewrite will take longer than initially expected.
 
 ---
 
-Day 12:
+Day 12 (17/2):
 - Continued with the rewrite which is continuing to be a headache but it is progressing forwards.
+
+---
+
+Day 13 (18/2):
+- Was exhausted most of the day but changed how you read and write from the `SerializedObject` which should end up feeling better.
+
+---
+
+Day 14 (19/2):
+- Completed the rewrite in theory but did not test it. (Ofc bugs were lurking that I didn't know about)
+
+---
+
+Day 15 (20/2):
+- Completed the rewrite (excluding missed cases) and was able to save and load from a scene once more.
+- Forgot to push so the content will be combined with the pushes on day 16.
+
+---
+
+Day 16 (23/2):
+- Started testing a bunch of cases to make sure that the saving and loading works correctly.
+- When testing I found out that the `SerializedObject` didn't find the assets correctly. So I fixed that.
+- Also realized that the asset metadata isn't able to handle files with multiple assets (such as glb) where it would only save the metadata for a single one of the assets.
+- Added a quick fix that will have to be replaced later to protect against this.
+- Reworked the `MakeShared` as I didn't like the macro solution and ended up having the function return a `MakeSharedContext` which the shared pointer could construct itself using. This allows the access of the users `std::source_location`.
+- Wrote the log from day 13-15 as I missed it earlier.
+
+---
