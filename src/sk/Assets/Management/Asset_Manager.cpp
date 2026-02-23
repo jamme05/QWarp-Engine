@@ -376,7 +376,7 @@ namespace sk
 	
 	auto cAsset_Manager::createGltfMeshMeta( const fastgltf::Mesh& _mesh, const size_t _index ) -> cShared_ptr< cAsset_Meta >
 	{
-		auto meta = sk::MakeShared< cAsset_Meta >( std::string_view( _mesh.name ), &sk::kTypeInfo< Assets::cMesh > );
+		cShared_ptr< cAsset_Meta > meta = sk::MakeShared< cAsset_Meta >( std::string_view( _mesh.name ), &sk::kTypeInfo< Assets::cMesh > );
 		meta->SetStoreIndex( _index );
 		
 		return meta;
@@ -385,7 +385,7 @@ namespace sk
 	auto cAsset_Manager::createGltfTextureMeta( const fastgltf::Texture& _texture,
 		size_t _index )->cShared_ptr< cAsset_Meta >
 	{
-		auto meta = sk::MakeShared< cAsset_Meta >( std::string_view( _texture.name ), &sk::kTypeInfo< Assets::cTexture > );
+		cShared_ptr< cAsset_Meta > meta = sk::MakeShared< cAsset_Meta >( std::string_view( _texture.name ), &sk::kTypeInfo< Assets::cTexture > );
 		meta->SetStoreIndex( _index );
 		
 		return meta;
@@ -519,7 +519,7 @@ namespace sk
 				auto buffer = sk::MakeShared< Graphics::cDynamic_Buffer >(
 					std::format( "{}: {}", _mesh.GetName(), std::string_view{ pmr_name } ),
 					Graphics::Buffer::eType::kVertex, accessor.normalized
-				);
+				)();
 
 				cStringID name = std::string_view{ pmr_name }; 
 

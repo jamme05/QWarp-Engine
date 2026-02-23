@@ -31,7 +31,7 @@ namespace sk
 		requires ( std::is_base_of_v< Object::cObject, Ty > && std::constructible_from< Ty, const std::string&, Args... > )
 		cShared_ptr< Ty > create_object( const std::string& _name, Args... _args )
 		{
-			auto shared = sk::MakeShared< Ty >( _name, _args... );
+			cShared_ptr< Ty > shared = sk::MakeShared< Ty >( _name, _args... );
 			shared->m_uuid_ = GenerateRandomUUID();
 			m_objects.emplace_back( shared );
 			return shared;

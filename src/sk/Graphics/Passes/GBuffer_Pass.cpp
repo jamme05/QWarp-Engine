@@ -24,11 +24,11 @@ void cGBuffer_Pass::Init()
 
     for( const auto& frame_buffer : *m_render_context_ )
     {
-        auto color_target    = sk::MakeShared< Rendering::cRender_Target >( m_resolution_, Rendering::cRender_Target::eFormat::kRGBA8 );
-        auto position_target = sk::MakeShared< Rendering::cRender_Target >( m_resolution_, Rendering::cRender_Target::eFormat::kRGBA16F );
-        auto normal_target   = sk::MakeShared< Rendering::cRender_Target >( m_resolution_, Rendering::cRender_Target::eFormat::kRGBA16F );
+        auto color_target    = sk::MakeShared< Rendering::cRender_Target >( m_resolution_, Rendering::cRender_Target::eFormat::kRGBA8 )();
+        auto position_target = sk::MakeShared< Rendering::cRender_Target >( m_resolution_, Rendering::cRender_Target::eFormat::kRGBA16F )();
+        auto normal_target   = sk::MakeShared< Rendering::cRender_Target >( m_resolution_, Rendering::cRender_Target::eFormat::kRGBA16F )();
         
-        auto depth_target = sk::MakeShared< Rendering::cDepth_Target >( m_resolution_, Rendering::cDepth_Target::eFormat::kD24FS8 );
+        auto depth_target = sk::MakeShared< Rendering::cDepth_Target >( m_resolution_, Rendering::cDepth_Target::eFormat::kD24FS8 )();
         
         frame_buffer->Bind( 0, position_target );
         frame_buffer->Bind( 1, normal_target );

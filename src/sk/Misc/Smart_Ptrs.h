@@ -193,6 +193,8 @@ namespace sk
 
 	template< class Ty >
 	class cShared_from_this;
+	template< class Ty, class... Args >
+	struct sMakeSharedContext;
 
 	// Shared ptr using itself of the tracker. Use in case the class is humongous.
 	template< class Ty >
@@ -205,7 +207,7 @@ namespace sk
 
 		Ty* m_ptr_ = nullptr;
 	public:
-		cShared_ptr( void ) = default;
+		cShared_ptr() = default;
 
 		explicit cShared_ptr( Ty* _ptr )
 		{
@@ -257,7 +259,11 @@ namespace sk
 			}
 		} // cShared_ptr
 
-		~cShared_ptr( void )
+		template< class Ot, class... Args >
+		requires std::is_base_of_v< Ty, Ot >
+		cShared_ptr( sMakeSharedContext< Ot, Args... >&& _context, const std::source_location& _location = std::source_location::current() );
+
+		~cShared_ptr()
 		{
 			dec();
 		} // ~cShared_ptr
@@ -724,11 +730,11 @@ namespace sk
 	{
 	public:
 		// Warning, don't run this in the constructor.
-		[[ nodiscard ]] auto get_shared( void )       -> cShared_ptr< Ty > { return m_self_; }
+		[[ nodiscard ]] auto get_shared()       -> cShared_ptr< Ty > { return m_self_; }
 		// Warning, don't run this in the constructor.
-		[[ nodiscard ]] auto get_shared( void ) const -> cShared_ptr< Ty > { return m_self_; }
-		[[ nodiscard ]] auto get_weak  ( void )       -> cWeak_Ptr  < Ty > { return m_self_; }
-		[[ nodiscard ]] auto get_weak  ( void ) const -> cWeak_Ptr  < Ty > { return m_self_; }
+		[[ nodiscard ]] auto get_shared() const -> cShared_ptr< Ty > { return m_self_; }
+		[[ nodiscard ]] auto get_weak  ()       -> cWeak_Ptr  < Ty > { return m_self_; }
+		[[ nodiscard ]] auto get_weak  () const -> cWeak_Ptr  < Ty > { return m_self_; }
 
 	protected:
 		cShared_from_this()
@@ -736,15 +742,57 @@ namespace sk
 		{} // cShared_from_this
 	};
 
+	template< class Ty, class... Args >
+	struct sMakeSharedContext
+	{
+		using tuple_t  = decltype( std::forward_as_tuple< Args... >( std::declval< Args >()... ) );
+		using result_t = cShared_ptr< Ty >;
+
+		sMakeSharedContext( Args&&... _args ) : storage{ std::forward< Args >( _args )... }{}
+
+		auto create_impl( const std::source_location& _location, Args&&... _args )
+		{
+			return Memory::alloc< Ptr_logic::cCompactData< Ty > >( 1, _location, std::forward< Args >( _args )... );
+		}
+
+		template< size_t... Indices >
+		auto apply_args( const std::source_location& _location, tuple_t&& _tuple, std::index_sequence< Indices... > )
+		{
+			return create_impl( _location, std::get< Indices >( std::forward< tuple_t >( _tuple ) )... );
+		}
+
+		auto operator()( const std::source_location& _location = std::source_location::current() ) -> result_t
+		{
+			return result_t{ cPtr_base{ apply_args( _location, std::move( storage ), std::make_index_sequence< std::tuple_size_v< tuple_t > >{} ) } };
+		}
+
+		tuple_t storage;
+	};
+
+
+	template< class Ty >
+	template< class Ot, class... Args >
+	requires std::is_base_of_v< Ty, Ot >
+	cShared_ptr< Ty >::cShared_ptr( sMakeSharedContext< Ot, Args... >&& _context, const std::source_location& _location )
+	: cShared_ptr( _context( _location ) )
+	{}
+
+	template< class Ty, class... Args >
+	auto MakeShared( Args&&... _args )
+	{
+		return sMakeSharedContext< Ty, Args... >( std::forward< Args >( _args )... );
+	}
+
 	// TODO: Replace cShared_ptr with std::shared_ptr to allow for optimizations.
 	template< class Ty, class... Args >
 	requires std::constructible_from< Ty, Args... >
-	auto MakeShared_old( Args&&... _args ) -> cShared_ptr< Ty >
+	auto MakeSharedUntracked( Args&&... _args ) -> cShared_ptr< Ty >
 	{
 		auto data = SK_SINGLE( Ptr_logic::cCompactData< Ty >, std::forward< Args >( _args )... );
 		return cShared_ptr< Ty >( cPtr_base{ data } );
 	}
 
+	// TODO: Remove
 	struct make_shared_helper
 	{
 		constexpr explicit make_shared_helper( const std::source_location& _location = std::source_location::current() )
@@ -765,7 +813,7 @@ namespace sk
 	template< class Ty >
 	consteval auto& ceval( const Ty& _val ){ return _val; }
 	template< class Ty >
-	consteval auto ceval( Ty&& _val ){ return std::move( _val ); }
+	consteval auto ceval( Ty&& _val ){ return std::forward< Ty >( _val ); }
 } // sk::
 
-#define MakeShared ceval( sk::make_shared_helper{} ).impl
+#define MakeShared_deprecated ceval( sk::make_shared_helper{} ).impl

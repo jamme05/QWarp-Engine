@@ -54,7 +54,7 @@ namespace sk::Object
 		requires ( std::is_base_of_v< iComponent, Ty > && std::constructible_from< Ty, Args... > )
 		auto AddComponent( Args&&... _args ) -> cShared_ptr< Ty >
 		{
-			auto component = sk::MakeShared< Ty >( std::forward< Args >( _args )... );
+			auto component = sk::MakeShared< Ty >( std::forward< Args >( _args )... )();
 
 			component->m_object_ = get_weak();
 			component->m_uuid_   = GenerateRandomUUID();
@@ -131,7 +131,7 @@ namespace sk::Object
 				return AddOrGetInternalComponent< Ty >( _requested_index );
 			}
 			
-			auto component = sk::MakeShared< Ty >();
+			cShared_ptr< Ty > component = sk::MakeShared< Ty >();
 
 			component->m_object_   = get_weak();
 			component->m_uuid_     = GenerateRandomUUID();
