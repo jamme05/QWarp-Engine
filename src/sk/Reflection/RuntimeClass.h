@@ -82,6 +82,9 @@ namespace sk
 
 		constexpr bool operator==( const iRuntimeClass& _right ) const { return m_hash == _right.m_hash; }
 
+		virtual constexpr auto getParentClass() const -> const iRuntimeClass* { return nullptr; }
+		virtual constexpr auto getBaseClass  () const -> const iRuntimeClass* { return nullptr; }
+
 		// Virtual member reflection
 		virtual auto getVariables() const
 			-> Reflection::member_var_map_ref_t { return {}; }
@@ -199,13 +202,23 @@ namespace sk
 		: parent_type( _name, _location, _parent_hash )
 		{} // cRuntimeClass
 
-		// Use std::is_base_of / std::is_base_of_v instead of this in case both types are known.
+		virtual constexpr auto getParentClass() const -> const iRuntimeClass* { return &kParent; }
+		virtual constexpr auto getBaseClass  () const -> const iRuntimeClass*
+		{
+			// TODO: Figure out a way to store the base class instead of having a recursive search.
+			if constexpr( kParent.getBaseClass() == nullptr )
+				return this;
+			return kParent.getBaseClass();
+		}
+
+		// Use std::is_base_of_v instead of this in case both types are known.
 		[[ nodiscard ]] constexpr bool isDerivedFrom( const iRuntimeClass& _base ) const override
 		{
 			if( *this == _base )
 				return true;
 
 			// The placeholder parent will always be of the type iClass
+			// TODO: Store this in a faster way. Like an array.
 			if constexpr( std::is_same_v< iRuntimeClass, parent_type > )
 				return false;
 			else
