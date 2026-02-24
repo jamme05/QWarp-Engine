@@ -11,6 +11,9 @@
 #include <sk/Misc/Singleton.h>
 #include <sk/Misc/UUID.h>
 
+#include "imgui.h"
+#include "sk/Scene/Components/Component.h"
+
 namespace sk::Object
 {
     class cObject;
@@ -21,6 +24,8 @@ namespace sk::Editor::Managers
     class cSelectionManager : public cSingleton< cSelectionManager >
     {
     public:
+        cSelectionManager();
+
         [[ nodiscard ]] auto& GetObjects   () const { return m_selected_objects_;    }
         [[ nodiscard ]] auto& GetComponents() const { return m_selected_components_; }
         [[ nodiscard ]] auto& GetAssets    () const { return m_selected_assets_;    }
@@ -29,28 +34,42 @@ namespace sk::Editor::Managers
         bool IsSelected( const Object::iComponent& _component ) const;
         bool IsSelected( const cAsset_Meta& _meta ) const;
 
-        void AddSelectedObject   ( const cShared_ptr< Object::cObject >& _object, bool _clear );
-        void ToggleSelectedObject( const cShared_ptr< Object::cObject >& _object );
-        void RemoveSelectedObject( const cUUID& _uuid );
-
-        void AddSelectedComponent   ( const cShared_ptr< Object::iComponent >& _component, bool _clear );
-        void ToggleSelectedComponent( const cShared_ptr< Object::iComponent >& _component );
-        void RemoveSelectedComponent( const cUUID& _uuid );
-
-        void AddSelectedAsset   ( const cShared_ptr< cAsset_Meta >& _meta, bool _clear );
-        void ToggleSelectedAsset( const cShared_ptr< cAsset_Meta >& _meta );
-        void RemoveSelectedAsset( const cUUID& _uuid );
+        void BeginMultiSelection( ImGuiMultiSelectFlags _flags = ImGuiMultiSelectFlags_None );
+        template< sk_class GroupBase >
+        bool Selectable( const cWeak_Ptr< GroupBase >& _instance );
+        bool Selectable( const type_info_t& _group_type, const cWeak_Ptr< iClass >& _instance );
+        void EndMultiSelection();
 
         void Clear();
         void Clean();
     private:
-        using object_map_t    = unordered_map< hash< cUUID >, cWeak_Ptr< Object::cObject > >;
-        using component_map_t = unordered_map< hash< cUUID >, cWeak_Ptr< Object::iComponent > >;
-        using meta_map_t      = unordered_map< hash< cUUID >, cWeak_Ptr< cAsset_Meta > >;
+        using object_map_t    = unordered_map< hash< cUUID >, ImGuiID >;
+        using component_map_t = unordered_map< hash< cUUID >, ImGuiID >;
+        using meta_map_t      = unordered_map< hash< cUUID >, ImGuiID >;
+        using items_vec_t     = std::vector< std::pair< ImGuiID, cWeak_Ptr< iClass > > >;
+
+        struct sSelectionGroup : ImGuiSelectionExternalStorage
+        {
+            sSelectionGroup();
+            
+            items_vec_t items;
+        };
+
+        ImGuiSelectionBasicStorage m_storage_;
+        size_t m_current_item_idx_ = 0;
+        size_t m_selection_group_id_   = 0;
+
+        items_vec_t m_items_;
 
         size_t          m_expected_component_index_ = std::numeric_limits< size_t >::max();
         object_map_t    m_selected_objects_;
         component_map_t m_selected_components_;
         meta_map_t      m_selected_assets_;
     };
+
+    template< sk_class Ty >
+    bool cSelectionManager::Selectable( const cWeak_Ptr< Ty >& _instance )
+    {
+        return Selectable( kTypeInfo< Ty >, _instance );
+    }
 } // sk::Editor::Managers::

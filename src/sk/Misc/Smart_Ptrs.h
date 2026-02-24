@@ -673,6 +673,8 @@ namespace sk
 		// TODO: Maybe compare the data used instead of the pointers?
 		// May be safe tho.
 		bool operator==( const cShared_ptr< Ty >& _right  ) const { return get() == _right.get(); }
+
+		auto operator<=>( const cWeak_Ptr& _right ) const { return get() <=> _right.get(); }
 		
 		Ty& operator  *( void ){ return *get(); }
 		Ty* operator ->( void ){ return  get(); }

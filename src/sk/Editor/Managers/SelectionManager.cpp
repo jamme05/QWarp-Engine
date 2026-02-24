@@ -10,6 +10,16 @@
 
 using namespace sk::Editor::Managers;
 
+cSelectionManager::cSelectionManager()
+{
+    /*
+    m_storage_.UserData = this;
+    m_storage_.AdapterIndexToStorageId = []( ImGuiSelectionBasicStorage* _self, int _idx )
+    {
+
+    }*/
+}
+
 bool cSelectionManager::IsSelected( const Object::cObject& _object )
 {
     auto& obj = const_cast< Object::cObject& >( _object );
@@ -21,7 +31,11 @@ bool cSelectionManager::IsSelected( const Object::cObject& _object )
 
 bool cSelectionManager::IsSelected( const Object::iComponent& _component ) const
 {
-    return m_selected_components_.contains( _component.GetUUID() );
+    const bool result = m_selected_components_.contains( _component.GetUUID() );
+    if( result )
+        sk::println( "Component {} (UUID: {}) Is Selected.", _component.getClass().getName(), _component.GetUUID().ToString() );
+
+    return result;
 }
 
 bool cSelectionManager::IsSelected( const cAsset_Meta& _meta ) const
@@ -29,118 +43,46 @@ bool cSelectionManager::IsSelected( const cAsset_Meta& _meta ) const
     return m_selected_assets_.contains( _meta.GetUUID() );
 }
 
-void cSelectionManager::AddSelectedObject( const cShared_ptr< Object::cObject >& _object, const bool _clear )
+bool cSelectionManager::Selectable( const type_info_t& _group_type, const cWeak_Ptr< iClass >& _instance )
 {
-    if( _clear )
-        Clear();
-
-    auto [ _, component ]
-        = _object->AddOrGetInternalComponent< Components::cEditorInternalComponent >( m_expected_component_index_ );
-
-    component->m_selected_ = true;
-    m_selected_objects_.emplace( _object->GetUUID(), _object );
+    m_current_item_idx_ = m_items_.size();
+    const ImGuiSelectionUserData user_data = static_cast< ImGuiSelectionUserData >( m_current_item_idx_ );
+    ImGui::SetNextItemSelectionUserData( user_data );
+    const auto label = std::format( "##{}_{}", m_selection_group_id_, m_current_item_idx_ );
+    m_items_.emplace_back( ImGui::GetID( label.c_str() ), _instance );
+    ImGui::Selectable( label.c_str() );
 }
 
-void cSelectionManager::ToggleSelectedObject( const cShared_ptr< Object::cObject >& _object )
+void cSelectionManager::BeginMultiSelection( const ImGuiMultiSelectFlags _flags )
 {
-    auto [ _, component ]
-        = _object->AddOrGetInternalComponent< Components::cEditorInternalComponent >( m_expected_component_index_ );
-
-    if( component->m_selected_ )
-        m_selected_objects_.erase( component->GetUUID() );
-    else
-        m_selected_objects_.emplace( _object->GetUUID(), _object );
-
-    component->m_selected_ = !component->m_selected_;
+    const auto ms_io = ImGui::BeginMultiSelect( _flags, m_storage_.Size );
+    m_storage_.ApplyRequests( ms_io );
 }
 
-void cSelectionManager::RemoveSelectedObject( const cUUID& _uuid )
+void cSelectionManager::EndMultiSelection()
 {
-    if( auto itr = m_selected_objects_.find( _uuid ); itr != m_selected_objects_.end() )
-    {
-        auto [ _, component ]
-            = itr->second->AddOrGetInternalComponent< Components::cEditorInternalComponent >( m_expected_component_index_ );
-
-        component->m_selected_ = false;
-        m_selected_objects_.erase( itr );
-    }
-}
-
-void cSelectionManager::AddSelectedComponent( const cShared_ptr< Object::iComponent >& _component, const bool _clear )
-{
-    if( _clear )
-        Clear();
-
-    m_selected_components_.emplace( _component->GetUUID(), _component );
-}
-
-void cSelectionManager::ToggleSelectedComponent( const cShared_ptr< Object::iComponent >& _component )
-{
-    if( const auto itr = m_selected_components_.find( _component->GetUUID() ); itr != m_selected_components_.end() )
-        m_selected_components_.erase( _component->GetUUID() );
-    else
-        m_selected_components_.emplace( _component->GetUUID(), _component );
-}
-
-void cSelectionManager::RemoveSelectedComponent( const cUUID& _uuid )
-{
-    m_selected_components_.erase( _uuid );
-}
-
-void cSelectionManager::AddSelectedAsset( const cShared_ptr< cAsset_Meta >& _meta, bool _clear )
-{
-    if( _clear )
-        m_selected_assets_.clear();
-
-    m_selected_assets_.emplace( _meta->GetUUID(), _meta );
-}
-
-void cSelectionManager::ToggleSelectedAsset( const cShared_ptr< cAsset_Meta >& _meta )
-{
-    if( const auto itr = m_selected_assets_.find( _meta->GetUUID() ); itr != m_selected_assets_.end() )
-        m_selected_assets_.erase( _meta->GetUUID() );
-    else
-        m_selected_assets_.emplace( _meta->GetUUID(), _meta );
-}
-
-void cSelectionManager::RemoveSelectedAsset( const cUUID& _uuid )
-{
-    m_selected_assets_.erase( _uuid );
+    ++m_selection_group_id_;
+    const auto ms_io = ImGui::EndMultiSelect();
+    m_storage_.ApplyRequests( ms_io );
 }
 
 void cSelectionManager::Clear()
 {
-    for( auto& [ _, obj ] : m_selected_objects_ )
-    {
-        auto [ __, component ]
-            = obj->AddOrGetInternalComponent< Components::cEditorInternalComponent >( m_expected_component_index_ );
-
-        component->m_selected_ = false;
-    }
-
+    m_storage_.Clear();
     m_selected_objects_.clear();
     m_selected_components_.clear();
+    m_selected_assets_.clear();
 }
 
 void cSelectionManager::Clean()
 {
-    std::vector< hash< cUUID > > objects_to_remove{};
-    std::vector< hash< cUUID > > components_to_remove{};
-    for( auto& [ uuid, obj ] : m_selected_objects_ )
+    // TODO: Redo
+}
+
+cSelectionManager::sSelectionGroup::sSelectionGroup()
+{
+    AdapterSetItemSelected = []( ImGuiSelectionExternalStorage* _self, int _idx, bool _selected )
     {
-        if( !obj.is_valid() )
-            objects_to_remove.emplace_back( uuid );
-    }
 
-    for( auto& [ uuid, component ] : m_selected_components_ )
-    {
-        if( !component.is_valid() )
-            components_to_remove.emplace_back( uuid );
-    }
-
-    for( auto& uuid : objects_to_remove )
-        m_selected_objects_.erase( uuid );
-
-    for( auto& uuid : components_to_remove )
-        m_selected_components_.erase( uuid );
+    };
 }

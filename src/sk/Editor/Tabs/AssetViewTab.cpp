@@ -117,17 +117,13 @@ void cAssetGridViewTab::Draw()
                 cSceneManager::get().RegisterScene( asset );
                 cSceneManager::get().LoadScene( asset->GetUUID() );
             }
-
-            if( ImGui::IsKeyDown( ImGuiMod_Ctrl ) )
-                selection_manager.ToggleSelectedAsset( asset );
-            else
-                selection_manager.AddSelectedAsset( asset, !ImGui::IsKeyDown( ImGuiMod_Shift ) );
             println( "Asset {} selected", asset->GetName().c_str() );
         }
     }
 
-    if( ImGui::IsMouseReleased( ImGuiMouseButton_Left ) )
-        selection_manager.Clear();
+    // WHY DID I DO THIS??
+    // if( ImGui::IsMouseReleased( ImGuiMouseButton_Left ) )
+    //     selection_manager.Clear();
 
     ImGui::PopStyleVar();
 }

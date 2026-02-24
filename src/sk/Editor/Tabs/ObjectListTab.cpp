@@ -95,20 +95,14 @@ void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
     if( children.empty() && !m_show_components_ )
         flags |= ImGuiTreeNodeFlags_Leaf;
 
+    auto id = ImGui::GetID( _object.GetUUID().ToString().c_str() );
 
     if( selection_manager.IsSelected( _object ) )
         flags |= ImGuiTreeNodeFlags_Selected;
 
+    // selection_manager.Selectable( cUUID::kInvalid, _object.get_weak() );
 
-    bool opened = ImGui::TreeNodeEx( _object.GetUUID().ToString().c_str(), flags, "%s", _object.GetName().c_str() );
-
-    if( ImGui::IsItemClicked() )
-    {
-        if( ImGui::IsKeyDown( ImGuiMod_Ctrl ) )
-            Managers::cSelectionManager::get().ToggleSelectedObject( _object.get_shared() );
-        else
-            Managers::cSelectionManager::get().AddSelectedObject( _object.get_shared(), !ImGui::IsKeyDown( ImGuiMod_Shift ) );
-    }
+    const bool opened = ImGui::TreeNodeEx( _object.GetUUID().ToString().c_str(), flags, "%s", _object.GetName().c_str() );
 
     if( !opened )
         return;
@@ -138,22 +132,16 @@ void cObjectListTab::_drawComponentsRecursive( const Object::iComponent& _compon
     const auto type_name = _component.getClass().getName();
 
     auto& children = _component.GetChildren();
+    // TODO: Handle the case when debug view is enabled
     const auto has_non_internal_child = std::ranges::any_of( children, []( const auto& _child ){ return !_child->GetIsInternal(); } );
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
     flags |= has_non_internal_child ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf;
+
     if( selection_manager.IsSelected( _component ) )
         flags |= ImGuiTreeNodeFlags_Selected;
 
     const bool opened = ImGui::TreeNodeEx( _component.GetUUID().ToString().c_str(), flags, "%s", type_name.c_str() );
-
-    if( ImGui::IsItemClicked() )
-    {
-        if( ImGui::IsKeyDown( ImGuiMod_Ctrl ) )
-            Managers::cSelectionManager::get().ToggleSelectedComponent( _component.get_shared() );
-        else
-            Managers::cSelectionManager::get().AddSelectedComponent( _component.get_shared(), !ImGui::IsKeyDown( ImGuiMod_Shift ) );
-    }
 
     if( !opened )
         return;
