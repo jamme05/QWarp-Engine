@@ -395,6 +395,8 @@ void cAsset_Meta::setAsset( cAsset* _asset )
         if( const auto locks = m_lock_refs_.load(); locks > 0 )
             m_lock_refs_.wait( locks );
 
+        m_flags_ &= ~kLoaded;
+
         // There seems to be some sort of race condition
         // So this ensures that the asset gets unreferenced before this thread gets stuck waiting for the memory tracker.
         const auto tmp = m_asset_;

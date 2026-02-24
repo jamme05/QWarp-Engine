@@ -276,7 +276,7 @@ namespace
     template<>
     constexpr auto kTypeString< std::string > = std::string{ "s:" };
 
-    enum class eValueType
+    enum class eValueType : uint_fast8_t
     {
         // :i:
         kInt,
@@ -318,11 +318,11 @@ namespace
         kArray,
     };
 
-    eValueType    operator+( eValueType _a, eValueType _b ){ return static_cast< eValueType >( static_cast< int_fast16_t >( _a ) + static_cast< int_fast16_t >( _b ) ); }
-    uint_fast16_t operator-( eValueType _a, eValueType _b ){ return static_cast< int_fast16_t >( _a ) - static_cast< int_fast16_t >( _b ); }
+    eValueType   operator+( eValueType _a, eValueType _b ){ return static_cast< eValueType >( static_cast< uint_fast8_t >( _a ) + static_cast< uint_fast8_t >( _b ) ); }
+    uint_fast8_t operator-( eValueType _a, eValueType _b ){ return static_cast< uint_fast8_t >( _a ) - static_cast< uint_fast8_t >( _b ); }
 
-    eValueType    operator+( eValueType _a, const int_fast16_t _b ){ return static_cast< eValueType >( static_cast< int_fast16_t >( _a ) + _b ); }
-    uint_fast16_t operator-( eValueType _a, const int_fast16_t _b ){ return static_cast< int_fast16_t >( _a ) - _b; }
+    eValueType   operator+( eValueType _a, const uint_fast8_t _b ){ return static_cast< eValueType >( static_cast< uint_fast8_t >( _a ) + _b ); }
+    uint_fast8_t operator-( eValueType _a, const uint_fast8_t _b ){ return static_cast< uint_fast8_t >( _a ) - _b; }
 
     auto get_vector_size( const eValueType _base_type, const char& _type_end ) -> eValueType
     {
@@ -389,7 +389,7 @@ namespace
     }
 
     template< class Ty >
-    auto handle_vector_value( simdjson::ondemand::array _array, int_fast8_t _size )
+    auto handle_vector_value( simdjson::ondemand::array _array, uint_fast8_t _size )
     {
         using value_t = cSerializedObject::value_t;
 
