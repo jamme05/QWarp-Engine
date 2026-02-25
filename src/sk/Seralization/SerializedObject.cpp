@@ -741,7 +741,7 @@ auto cSerializedObject::GetType() const -> type_info_t
     return m_serialized_type_;
 }
 
-auto cSerializedObject::GetRuntimeClass() const -> class_info_t
+auto cSerializedObject::GetRuntimeClass() const -> class_info_t*
 {
     return m_serialized_type_->as_class_info()->runtime_class;
 }

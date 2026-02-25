@@ -129,7 +129,7 @@ namespace sk
         void ClearCache();
 
         [[ nodiscard ]] auto GetType() const -> type_info_t;
-        [[ nodiscard ]] auto GetRuntimeClass() const -> class_info_t;
+        [[ nodiscard ]] auto GetRuntimeClass() const -> class_info_t*;
 
         auto GetBase( type_info_t _type ) -> std::optional< std::reference_wrapper< cSerializedObject > >;
         template< reflected Ty >

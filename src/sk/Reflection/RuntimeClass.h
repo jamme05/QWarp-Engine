@@ -62,7 +62,12 @@ namespace sk
 		, m_file_path( nullptr )
 		, m_line( 0 )
 		{} // iRuntimeClass
-		
+
+		iRuntimeClass( const iRuntimeClass& ) = delete;
+		iRuntimeClass( iRuntimeClass&& ) = delete;
+		iRuntimeClass& operator=( const iRuntimeClass& ) = delete;
+		iRuntimeClass& operator=( iRuntimeClass&& ) = delete;
+
 		virtual ~iRuntimeClass() = default;
 
 		virtual iClass* create( void )
@@ -111,7 +116,7 @@ namespace sk
 
 	constexpr static iRuntimeClass kInvalidClass{ "Invalid" };
 	
-	using class_info_t = const iRuntimeClass*;
+	using class_info_t = const iRuntimeClass;
 
 	template< bool Select, class Ty, class Ty2 >
 	struct select_class_type{};
