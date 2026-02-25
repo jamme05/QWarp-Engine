@@ -20,63 +20,63 @@ cSelectionManager::cSelectionManager()
     }*/
 }
 
-bool cSelectionManager::IsSelected( const Object::cObject& _object )
+auto cSelectionManager::GetItemCollection( class_info_t& _group_class ) const -> const items_vec_t&
 {
-    auto& obj = const_cast< Object::cObject& >( _object );
-    auto [ _, component ]
-        = obj.AddOrGetInternalComponent< Components::cEditorInternalComponent >( m_expected_component_index_ );
-
-    return component->m_selected_;
+    if( const auto itr = m_groups_.find( _group_class.getTypeHash() ); itr != m_groups_.end() )
+        return itr->second.items;
+    SK_FATAL( "Error: No item collection for type: {}", _group_class.getRawName() )
 }
 
-bool cSelectionManager::IsSelected( const Object::iComponent& _component ) const
+auto cSelectionManager::GetSelectedCollection(class_info_t& _group_class) const -> const selected_map_t&
 {
-    const bool result = m_selected_components_.contains( _component.GetUUID() );
-    if( result )
-        sk::println( "Component {} (UUID: {}) Is Selected.", _component.getClass().getName(), _component.GetUUID().ToString() );
-
-    return result;
+    if( const auto itr = m_groups_.find( _group_class.getTypeHash() ); itr != m_groups_.end() )
+        return itr->second.selected;
+    SK_FATAL( "Error: No item collection for type: {}", _group_class.getRawName() )
 }
 
-bool cSelectionManager::IsSelected( const cAsset_Meta& _meta ) const
+auto cSelectionManager::GetItem( class_info_t& _group_class, size_t _index ) const -> const sItem&
 {
-    return m_selected_assets_.contains( _meta.GetUUID() );
+    return GetItemCollection( _group_class )[ _index ];
 }
 
-bool cSelectionManager::Selectable( const type_info_t& _group_type, const cWeak_Ptr< iClass >& _instance )
+auto cSelectionManager::GetInstance( class_info_t& _group_class, size_t _index ) const -> const cWeak_Ptr< iClass >&
 {
-    m_current_item_idx_ = m_items_.size();
-    const ImGuiSelectionUserData user_data = static_cast< ImGuiSelectionUserData >( m_current_item_idx_ );
+    return GetItem( _group_class, _index ).instance;
+}
+
+bool cSelectionManager::Selectable( class_info_t& _group_class, const cWeak_Ptr< iClass >& _instance )
+{
+    auto& group = m_groups_[ _group_class.getTypeHash() ];
+
+    const auto current_item_idx = group.items.size();
+    const auto user_data = static_cast< ImGuiSelectionUserData >( current_item_idx );
     ImGui::SetNextItemSelectionUserData( user_data );
-    const auto label = std::format( "##{}_{}", m_selection_group_id_, m_current_item_idx_ );
-    m_items_.emplace_back( ImGui::GetID( label.c_str() ), _instance );
+
+    const auto label = std::format( "##{}_{}", _group_class.getRawName(), current_item_idx );
+    group.items.emplace_back( ImGui::GetID( label.c_str() ), _instance );
+
     ImGui::Selectable( label.c_str() );
 }
 
-void cSelectionManager::BeginMultiSelection( const ImGuiMultiSelectFlags _flags )
+void cSelectionManager::BeginSelection( class_info_t& _group_class, const ImGuiMultiSelectFlags _flags )
 {
-    const auto ms_io = ImGui::BeginMultiSelect( _flags, m_storage_.Size );
-    m_storage_.ApplyRequests( ms_io );
+    auto& group = m_groups_[ _group_class.getTypeHash() ];
+
+    const auto ms_io = ImGui::BeginMultiSelect( _flags, group.items.size() );
+    group.Apply( ms_io );
 }
 
-void cSelectionManager::EndMultiSelection()
+void cSelectionManager::EndSelection( class_info_t& _group_class )
 {
-    ++m_selection_group_id_;
+    auto& group = m_groups_[ _group_class.getTypeHash() ];
+
     const auto ms_io = ImGui::EndMultiSelect();
-    m_storage_.ApplyRequests( ms_io );
+    group.Apply( ms_io );
 }
 
 void cSelectionManager::Clear()
 {
-    m_storage_.Clear();
-    m_selected_objects_.clear();
-    m_selected_components_.clear();
-    m_selected_assets_.clear();
-}
-
-void cSelectionManager::Clean()
-{
-    // TODO: Redo
+    m_groups_.clear();
 }
 
 cSelectionManager::sSelectionGroup::sSelectionGroup()
@@ -85,4 +85,9 @@ cSelectionManager::sSelectionGroup::sSelectionGroup()
     {
 
     };
+}
+
+void cSelectionManager::sSelectionGroup::Apply( ImGuiMultiSelectIO* _ms_io )
+{
+
 }
