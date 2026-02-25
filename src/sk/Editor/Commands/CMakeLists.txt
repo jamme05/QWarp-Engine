@@ -1,13 +1,11 @@
 
 target_sources(SkapeEngine
     PRIVATE
-        CommandManager.cpp
-        SelectionManager.cpp
+        Command.cpp
 
     PUBLIC
     FILE_SET engineIncludes
     TYPE HEADERS
     FILES
-        CommandManager.h
-        SelectionManager.h
+        Command.h
 )
