@@ -73,15 +73,21 @@ void cObjectListTab::Destroy()
 void cObjectListTab::_drawScene( const cScene& _scene )
 {
     auto& meta = *_scene.GetMeta();
+    auto& selection_manager = Managers::cSelectionManager::get();
+
+    selection_manager.BeginSelection< Object::cSceneItem >( ImGuiMultiSelectFlags_BoxSelect1d );
 
     if( ImGui::CollapsingHeader( meta.GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
     {
         m_scene_context_menu_.SetUserData( &meta );
         m_scene_context_menu_.Draw();
 
+
         for( auto& object : _scene.GetObjects() )
             _drawObjectRecursive( *object );
     }
+
+    selection_manager.EndSelection< Object::cSceneItem >();
 }
 
 void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
@@ -97,7 +103,7 @@ void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
 
     auto id = ImGui::GetID( _object.GetUUID().ToString().c_str() );
 
-    if( selection_manager.IsSelected( _object ) )
+    if( selection_manager.Selectable< Object::cSceneItem >( _object.get_weak() ) )
         flags |= ImGuiTreeNodeFlags_Selected;
 
     // selection_manager.Selectable( cUUID::kInvalid, _object.get_weak() );
@@ -138,7 +144,7 @@ void cObjectListTab::_drawComponentsRecursive( const Object::iComponent& _compon
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
     flags |= has_non_internal_child ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf;
 
-    if( selection_manager.IsSelected( _component ) )
+    if( selection_manager.Selectable< Object::cSceneItem >( _component.get_weak() ) )
         flags |= ImGuiTreeNodeFlags_Selected;
 
     const bool opened = ImGui::TreeNodeEx( _component.GetUUID().ToString().c_str(), flags, "%s", type_name.c_str() );

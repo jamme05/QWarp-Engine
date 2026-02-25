@@ -13,6 +13,7 @@
 #include <sk/Misc/UUID.h>
 #include <sk/Reflection/RuntimeClass.h>
 #include <sk/Scene/Managers/EventManager.h>
+#include <sk/Scene/Objects/SceneItem.h>
 #include <sk/Seralization/SerializedObject.h>
 
 namespace sk
@@ -29,7 +30,7 @@ namespace sk::Object
 {
 	typedef uint64_t hash_t;
 
-	GENERATE_CLASS( iComponent ), public cShared_from_this< iComponent >, public Event::cEventListener, public iSerializable
+	GENERATE_CLASS( iComponent, cSceneItem ), public cShared_from_this< iComponent >, public Event::cEventListener, public iSerializable
 	{
 		CREATE_CLASS_IDENTIFIERS( iComponent, runtime_class_iComponent )
 
@@ -90,8 +91,6 @@ namespace sk::Object
 
 		auto& GetChildren() const { return m_children_; }
 
-		auto& GetUUID() const { return m_uuid_; }
-
 		void SetParent( const cShared_ptr< iComponent >& _component );
 
 		auto Serialize() -> cSerializedObject override;
@@ -116,7 +115,6 @@ namespace sk::Object
 		void disableRecursive();
 
 		std::vector< cShared_ptr< iComponent > > m_children_ = { }; // TODO: Add get children function
-		cUUID m_uuid_     = {};
 		bool  m_enabled_  = true;
 		// Internal will hide it from the editor.
 		bool  m_internal_ = false;

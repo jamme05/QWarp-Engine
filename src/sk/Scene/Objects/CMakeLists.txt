@@ -3,6 +3,7 @@ target_sources(SkapeEngine
   PRIVATE
     Camera.cpp
     CameraFlight.cpp
+    SceneItem.cpp
 
   PUBLIC
     FILE_SET engineIncludes
@@ -10,4 +11,5 @@ target_sources(SkapeEngine
     FILES
       Camera.h
       CameraFlight.h
+      SceneItem.h
 )

@@ -14,8 +14,10 @@
 #include <sk/Scene/Components/Component.h>
 #include <sk/Scene/Components/TransformComponent.h>
 #include <sk/Scene/Managers/Internal_Component_Manager.h>
+#include <sk/Scene/Objects/SceneItem.h>
 
 #include <ranges>
+
 
 namespace sk::Object::Components
 {
@@ -31,9 +33,9 @@ namespace sk
 namespace sk::Object
 {
 // TODO: Check if class shit is needed? Like with Assets and Components.
-	GENERATE_CLASS( cObject ), public Event::cEventListener, public cShared_from_this< cObject >, public iSerializable
+	SK_CLASS( Object, cSceneItem ), public Event::cEventListener, public cShared_from_this< cObject >, public iSerializable
 	{
-		CREATE_CLASS_BODY( cObject )
+		SK_CLASS_BODY( Object )
 
 		friend class sk::cScene;
 		friend class sk::cSceneManager;
@@ -154,7 +156,6 @@ namespace sk::Object
 		[[ nodiscard ]]
 		auto  GetLayer() const { return m_layer_; }
 
-		[[ nodiscard ]] auto& GetUUID() const { return m_uuid_; }
 		[[ nodiscard ]] auto& GetRoot()       { return m_root; }
 		[[ nodiscard ]] auto& GetRoot() const { return m_root; }
 
@@ -188,7 +189,6 @@ namespace sk::Object
 
 	sk_private:
 		cShared_ptr< iComponent > m_root;
-		cUUID m_uuid_;
 
 		// TODO: Use typedefs/using
 		vector             < cShared_ptr< cObject > >              m_children_   = { };
