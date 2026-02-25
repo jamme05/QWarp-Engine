@@ -137,3 +137,15 @@ Day 16 (23/2):
 - Wrote the log from day 13-15 as I missed it earlier.
 
 ---
+
+Day 17 (24/2)
+- Started reworking my selection system to work with ImGuis multiselect system.
+
+---
+
+Day 18 (25/2)
+- [Adrian sent me this.](https://forum.osdev.org/viewtopic.php?t=31449)
+- Continued on the selection system and realized that it wouldn't support selecing both objects and components. So I made a temporary fix which was giving them both the same base class. (This will have to be replaced in the future)
+- Started on a command system to allow for undo/redo.
+
+---
