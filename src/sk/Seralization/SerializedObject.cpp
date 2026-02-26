@@ -73,6 +73,8 @@ Serialization::cResources::cResources( simdjson::ondemand::object _object )
                 auto id = element.get_object().find_field( "id" ).get_uint64().value();
                 if( auto itr = global_types.find( id ); itr != global_types.end() )
                     types.emplace( id, itr->second );
+                else
+                    SK_BREAK;
             }
         }
         else if( field.key() == "assets" )
@@ -113,6 +115,8 @@ auto Serialization::cResources::GetType( const uint64_t _id ) -> type_info_t
 {
     if( const auto itr = types.find( _id ); itr != types.end() )
         return itr->second;
+
+    SK_BREAK;
     return nullptr;
 }
 
@@ -205,6 +209,8 @@ cSerializedObject::cSerializedObject( simdjson::ondemand::object _object, Serial
         {
             if( auto value = field.value(); !value.is_null() )
                 m_serialized_type_ = m_resources_->GetType( value.get_uint64() );
+            else
+                SK_BREAK;
         }
         else if( key == ":bases:" ) // The object will not contain any base if there isn't any.
         {
@@ -233,11 +239,14 @@ cSerializedObject::cSerializedObject( simdjson::ondemand::object _object, Serial
         }
     }
 
+
+    // if( m_serialized_type_ == nullptr ) SK_BREAK;
+
     if( owns_resources )
     {
         delete m_resources_;
-        m_resources_ = nullptr;
     }
+    m_resources_ = nullptr;
 }
 
 namespace
