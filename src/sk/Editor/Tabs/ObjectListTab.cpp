@@ -75,19 +75,18 @@ void cObjectListTab::_drawScene( const cScene& _scene )
     auto& meta = *_scene.GetMeta();
     auto& selection_manager = Managers::cSelectionManager::get();
 
-    selection_manager.BeginSelection< Object::cSceneItem >( ImGuiMultiSelectFlags_BoxSelect1d );
+    selection_manager.BeginSelection< Object::cSceneItem >( Selection::kDefaultListFlags );
 
     if( ImGui::CollapsingHeader( meta.GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
     {
         m_scene_context_menu_.SetUserData( &meta );
         m_scene_context_menu_.Draw();
 
-
         for( auto& object : _scene.GetObjects() )
             _drawObjectRecursive( *object );
     }
 
-    selection_manager.EndSelection< Object::cSceneItem >();
+    selection_manager.EndSelection();
 }
 
 void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
@@ -101,16 +100,10 @@ void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
     if( children.empty() && !m_show_components_ )
         flags |= ImGuiTreeNodeFlags_Leaf;
 
-    auto id = ImGui::GetID( _object.GetUUID().ToString().c_str() );
-
-    if( selection_manager.Selectable< Object::cSceneItem >( _object.get_weak() ) )
+    if( selection_manager.Selectable( _object.GetUUID().Hash(), _object.get_weak() ) )
         flags |= ImGuiTreeNodeFlags_Selected;
 
-    // selection_manager.Selectable( cUUID::kInvalid, _object.get_weak() );
-
-    const bool opened = ImGui::TreeNodeEx( _object.GetUUID().ToString().c_str(), flags, "%s", _object.GetName().c_str() );
-
-    if( !opened )
+    if( !ImGui::TreeNodeEx( _object.GetUUID().ToString().c_str(), flags, "%s", _object.GetName().c_str() ) )
         return;
 
     for( auto& object : children )
@@ -144,12 +137,10 @@ void cObjectListTab::_drawComponentsRecursive( const Object::iComponent& _compon
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
     flags |= has_non_internal_child ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf;
 
-    if( selection_manager.Selectable< Object::cSceneItem >( _component.get_weak() ) )
+    if( selection_manager.Selectable( _component.GetUUID().Hash(), _component.get_weak() ) )
         flags |= ImGuiTreeNodeFlags_Selected;
 
-    const bool opened = ImGui::TreeNodeEx( _component.GetUUID().ToString().c_str(), flags, "%s", type_name.c_str() );
-
-    if( !opened )
+    if( !ImGui::TreeNodeEx( _component.GetUUID().ToString().c_str(), flags, "%s", type_name.c_str() ) )
         return;
 
     for( auto& child : children )

@@ -32,23 +32,27 @@ namespace sk::Editor::Managers
             cWeak_Ptr< iClass > instance;
         };
 
-        using items_vec_t    = std::vector< sItem >;
-        using selected_map_t = std::set< int >;
+        using items_map_t    = std::unordered_map< uint64_t, sItem >;
+        using id_vec_t       = std::vector< uint64_t >;
+        using selected_map_t = std::set< uint64_t >;
 
-        struct sSelectionGroup : ImGuiSelectionExternalStorage
+        struct sSelectionGroup
         {
             sSelectionGroup();
 
             void Apply( ImGuiMultiSelectIO* _ms_io );
+            void ClearSelected();
 
-            items_vec_t    items;
+            class_info_t*  group_class;
+            id_vec_t       ids;
+            items_map_t    items;
             selected_map_t selected;
         };
 
         cSelectionManager();
 
         template< sk_class Ty >
-        [[ nodiscard ]] auto GetItemCollection() const -> const items_vec_t&;
+        [[ nodiscard ]] auto GetItemCollection() const -> const items_map_t&;
         template< sk_class Ty >
         [[ nodiscard ]] auto GetSelectedCollection() const -> const selected_map_t&;
         template< sk_class Ty >
@@ -56,34 +60,34 @@ namespace sk::Editor::Managers
         template< sk_class Ty >
         [[ nodiscard ]] auto GetInstance( size_t _index ) const -> const cWeak_Ptr< Ty >&;
 
-        [[ nodiscard ]] auto GetItemCollection    ( class_info_t& _group_class ) const -> const items_vec_t&;
+        [[ nodiscard ]] auto GetItemCollection    ( class_info_t& _group_class ) const -> const items_map_t&;
         [[ nodiscard ]] auto GetSelectedCollection( class_info_t& _group_class ) const -> const selected_map_t&;
         [[ nodiscard ]] auto GetItem              ( class_info_t& _group_class, size_t _index ) const -> const sItem&;
         [[ nodiscard ]] auto GetInstance          ( class_info_t& _group_class, size_t _index ) const -> const cWeak_Ptr< iClass >&;
 
         template< sk_class Ty >
         void BeginSelection( ImGuiMultiSelectFlags _flags = ImGuiMultiSelectFlags_None );
-        template< sk_class GroupBase >
-        bool Selectable( const cWeak_Ptr< GroupBase >& _instance );
-        template< sk_class GroupBase >
-        void EndSelection();
 
         void BeginSelection( class_info_t& _group_class, ImGuiMultiSelectFlags _flags = ImGuiMultiSelectFlags_None );
-        bool Selectable( class_info_t& _group_class, const cWeak_Ptr< iClass >& _instance );
-        void EndSelection( class_info_t& _group_class );
+        void MarkForDeletion( bool _single = false );
+        bool Selectable( uint64_t _identifier, const cWeak_Ptr< iClass >& _instance );
+        void EndSelection();
 
         void Clear();
     private:
+        auto _getGroup( class_info_t& _group_class ) const -> const sSelectionGroup&;
 
         using group_map_t = unordered_map< type_hash, sSelectionGroup >;
 
         group_map_t m_groups_;
+        size_t      m_marked_for_deletion_start_;
+        size_t      m_marked_for_deletion_end_;
 
-        size_t m_expected_component_index_ = std::numeric_limits< size_t >::max();
+        sSelectionGroup* m_active_group_ = nullptr;
     };
 
     template< sk_class Ty >
-    auto cSelectionManager::GetItemCollection() const -> const items_vec_t&
+    auto cSelectionManager::GetItemCollection() const -> const items_map_t&
     {
         return GetItemCollection( Ty::getStaticClass() );
     }
@@ -111,16 +115,9 @@ namespace sk::Editor::Managers
     {
         BeginSelection( Ty::getStaticClass(), _flags );
     }
-
-    template< sk_class Ty >
-    bool cSelectionManager::Selectable( const cWeak_Ptr< Ty >& _instance )
-    {
-        return Selectable( Ty::getStaticClass(), _instance );
-    }
-
-    template< sk_class GroupBase >
-    void cSelectionManager::EndSelection()
-    {
-        EndSelection( GroupBase::getStaticClass() );
-    }
 } // sk::Editor::Managers::
+
+namespace sk::Editor::Selection
+{
+    static constexpr ImGuiMultiSelectFlags kDefaultListFlags = ImGuiMultiSelectFlags_BoxSelect1d | ImGuiMultiSelectFlags_ClearOnEscape;
+} // sk::Editor::Selection::

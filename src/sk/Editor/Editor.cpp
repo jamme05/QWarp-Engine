@@ -259,8 +259,6 @@ void cEditor::Run()
 		ImGui::End();
 	}
 
-	Managers::cSelectionManager::get().Clean();
-
     Gui::ImGuiRender();
     m_main_window_->SwapBuffers();
 
