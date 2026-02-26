@@ -57,7 +57,7 @@ namespace sk::Severity
     {
         constexpr sSeverity_Filter( const uint32_t _filter ) noexcept
         : m_filter( _filter )
-        , m_value ( GetValue( _filter ) == 0 ? kAllTypes : GetValue( _filter ) )
+        , m_value ( GetValue( _filter ) )
         , m_type  ( GetType ( _filter ) )
         {} // sSeverity_Filter
 
@@ -66,7 +66,7 @@ namespace sk::Severity
         uint32_t m_type;
     };
 
-    static constexpr sSeverity_Filter kConstFilter = kAll;
+    static constexpr sSeverity_Filter kConstFilter = 0;
     static constinit sSeverity_Filter kFilter      = kConstFilter;
 
     static constexpr bool IsConst( const uint32_t _severity ) noexcept { return _severity & kConst; }

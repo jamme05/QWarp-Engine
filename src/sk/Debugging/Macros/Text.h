@@ -17,6 +17,7 @@
 #define PRINT_TEXT( ... ) sk::print( __VA_ARGS__ )
 #define PRINTLN_TEXT( ... ) sk::println( __VA_ARGS__ )
 #define WARN_TEXT( ... ) sk::println( stderr, __VA_ARGS__ )
+#define BREAK_TEXT( ... ) SK_BREAK; WARN_TEXT( __VA_ARGS__ )
 #define ERR_TEXT( ... ) SK_FATAL( __VA_ARGS__ )
 #define TEXT( ... ) _TEXT( __VA_ARGS__ ) THIS_T
 

@@ -46,7 +46,7 @@
     if( Condition ){ [[ unlikely ]] EXTRACT_TEXT( Method, Text ); __VA_ARGS__ }
 
 #define SK_ASSERT_TEMPLATE_IF_RET( Method, Condition, Severity, Text, ... ) \
-    SK_PASSTHROUGH( Severity, SK_ASSERT_TEMPLATE( Condition, Method, Text, __VA_OPT__( __VA_ARGS__ ; ) ) )
+    if( Condition ){ [[ unlikely ]] SK_PASSTHROUGH( Severity, EXTRACT_TEXT( Method, Text ); ) __VA_OPT__( __VA_ARGS__; ) }
 
 #define SK_ASSERT_TEMPLATE_IF( Method, Condition, Severity, Text, ... ) \
     SK_PASSTHROUGH( Severity, SK_ASSERT_TEMPLATE( Condition, Method, Text, __VA_ARGS__ ) )
@@ -96,7 +96,7 @@
     SK_BREAK_IF( Severity, NOT( Condition ), Text )
 
 #define SK_BREAK_RET_IF( Severity, Condition, Text, ... ) \
-    SK_ASSERT_TEMPLATE_IF_RET( WARN, Condition, Severity, Text, SK_BREAK; return __VA_ARGS__ )
+    SK_ASSERT_TEMPLATE_IF_RET( BREAK, Condition, Severity, Text, return __VA_ARGS__ )
 
 #define SK_BREAK_RET_IFN( Severity, Condition, Text, ... ) \
     SK_BREAK_RET_IF( Severity, NOT( Condition ), Text, __VA_ARGS__ )
