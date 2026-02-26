@@ -84,7 +84,12 @@ namespace sk
             )
         );
     } // to_string
-    
+
+    auto cUUID::Hash() const -> uint64_t
+    {
+        return ( ( ( Hashing::val_64_const ^ m_low_ ) * Hashing::prime_64_const ) ^ m_high_ ) * Hashing::prime_64_const;
+    }
+
     namespace
     {
         // This is following the RFC 9562 standard for the UUIDv4 ( https://www.rfc-editor.org/rfc/rfc9562.html ). 

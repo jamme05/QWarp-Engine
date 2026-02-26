@@ -62,6 +62,8 @@ namespace sk
         [[ nodiscard ]]
         std::string ToString( bool _dashed = true ) const;
 
+        auto Hash() const -> uint64_t;
+
         static const cUUID kInvalid;
         static const cUUID kMax;
     };
@@ -72,7 +74,7 @@ namespace sk
     struct hash< cUUID >
     {
         constexpr hash( const cUUID& _uuid ) // Might be safe enough?
-        : m_hash_( ( ( ( Hashing::val_64_const ^ _uuid.get_low() ) * Hashing::prime_64_const ) ^ _uuid.get_high() ) * Hashing::prime_64_const )
+        : m_hash_( _uuid.Hash() )
         {}
 
         HASH_REQUIREMENTS( hash )
