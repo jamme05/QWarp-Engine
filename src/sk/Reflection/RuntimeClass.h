@@ -207,8 +207,8 @@ namespace sk
 		: parent_type( _name, _location, _parent_hash )
 		{} // cRuntimeClass
 
-		virtual constexpr auto getParentClass() const -> const iRuntimeClass* { return &kParent; }
-		virtual constexpr auto getBaseClass  () const -> const iRuntimeClass*
+		constexpr auto getParentClass() const -> const iRuntimeClass* override { return &kParent; }
+		constexpr auto getBaseClass  () const -> const iRuntimeClass* override
 		{
 			// TODO: Figure out a way to store the base class instead of having a recursive search.
 			if constexpr( kParent.getBaseClass() == nullptr )
