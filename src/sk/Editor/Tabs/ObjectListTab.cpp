@@ -54,6 +54,7 @@ void cObjectListTab::Draw()
     for( auto scenes = manager.GetScenes();
         auto& scene_meta : scenes | std::views::values )
     {
+        // TODO: The handle the scene still being marked as loaded when it's being destroyed.
         if( scene_meta->IsLoaded() )
             _drawScene( static_cast< cScene& >( *scene_meta->GetAsset() ) ); // NOLINT(*-pro-type-static-cast-downcast)
         else

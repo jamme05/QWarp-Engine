@@ -310,6 +310,16 @@ void cEditor::_drawMainWindow()
 	if( ImGui::Button( m_is_game_running_.load() ? "Pause" : "Play" ) )
 		m_is_game_running_.store( !m_is_game_running_.load() );
 
+	static bool fuck_it_we_ball = false;
+
+	if( ImGui::Checkbox( "Fuck it we ball", &fuck_it_we_ball ) )
+	{
+		if( fuck_it_we_ball )
+			sk::Severity::kFilter = 0;
+		else
+			sk::Severity::kFilter = sk::Severity::kAll;
+	}
+
     ImGui::DockSpace( dockspace_id );
     ImGui::End();
 }

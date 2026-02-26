@@ -298,7 +298,7 @@ void cAsset_Meta::push_load_task( const bool _load ) const
 
     const auto loader = asset_manager.GetFileLoader( m_ext_.hash() );
 
-    SK_BREAK_RET_IF( sk::Severity::kConstEngine, loader == nullptr,
+    SK_BREAK_RET_IF( sk::Severity::kEngine, loader == nullptr,
         "Error no loader for asset." )
 
     // TODO: Add a cache for the affected assets.
