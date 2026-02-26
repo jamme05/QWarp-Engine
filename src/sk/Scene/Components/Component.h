@@ -35,6 +35,7 @@ namespace sk::Object
 		CREATE_CLASS_IDENTIFIERS( iComponent, runtime_class_iComponent )
 
 		friend class cObject;
+		friend class sk::cScene;
 		friend class sk::cSceneManager;
 	protected:
 		iComponent()
@@ -100,7 +101,7 @@ namespace sk::Object
 		virtual void setEnabled( const bool _is_enabled ){ m_enabled_ = _is_enabled; }
 		virtual void registerEvents() = 0;
 
-		void SetObject( const cWeak_Ptr< cObject >& _parent_object );
+		void SetObject( const cShared_ptr< cObject >& _parent_object );
 		
 		cShared_ptr< cTransform > m_transform_;
 		cWeak_Ptr< iComponent >   m_parent_    = nullptr;
@@ -110,6 +111,8 @@ namespace sk::Object
 		// TODO: Make the children into an unordered map
 
 	sk_private: // TODO: Move parts to cpp, find way to make actual constexpr
+
+		void destroySelf() final;
 
 		void registerRecursive();
 		void enableRecursive ();

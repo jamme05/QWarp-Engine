@@ -18,7 +18,7 @@ namespace sk
 		for( auto& obj : _object.ReadValue< cSerializedObject* >( "objects" )->GetArray< cSerializedObject >() )
 		{
 			auto& object = m_objects.emplace_back( obj.ConstructSharedClass().Cast< Object::cObject >() );
-			object->m_parent_scene = this;
+			object->m_scene_ = this;
 		}
 
 		_object.EndRead();
@@ -64,6 +64,10 @@ namespace sk
 	{
 		for( auto& target : m_marked_for_removal_ )
 		{
+			// Skip casting.
+			if( target == nullptr )
+				continue;
+
 			if( auto object = target.DynCast< Object::cObject >() )
 			{
 				auto& uuid = object->GetUUID();
@@ -73,7 +77,11 @@ namespace sk
 			}
 			else if( auto component = target.DynCast< Object::iComponent >() )
 			{
+				auto& parent_object = component->m_object_;
 
+				SK_BREAK_RET_IF( sk::Severity::kEngine, parent_object == nullptr, "Warning: This component isn't tied to any object so shouldn't exist." )
+
+				parent_object->RemoveComponent( component.Lock() );
 			}
 		}
 

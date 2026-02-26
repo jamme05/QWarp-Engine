@@ -33,8 +33,11 @@ void iComponent::SetParent( const cShared_ptr< iComponent >& _component )
     if( m_parent_ == _component )
         return;
 
-    if( const auto& new_object = _component->m_object_; m_object_ != _component->m_object_ )
-        SetObject( new_object );
+    if( _component != nullptr )
+    {
+        if( const auto& new_object = _component->m_object_; m_object_ != _component->m_object_ && new_object.is_valid() )
+            SetObject( new_object.Lock() );
+    }
 
     if( m_parent_ && !m_parent_.Lock()->m_children_.empty() )
     {
@@ -70,8 +73,13 @@ auto iComponent::Serialize() -> cSerializedObject
     return object;
 }
 
-void iComponent::SetObject( const cWeak_Ptr< cObject >& _parent_object )
+void iComponent::SetObject( const cShared_ptr< cObject >& _parent_object )
 {
+    SK_BREAK_RET_IF( sk::Severity::kEngine, _parent_object == nullptr, "Error: Can't set a components parent object to null." )
+
+    if( m_object_ == _parent_object )
+        return;
+
     for( auto& child : m_children_ )
         child->SetObject( _parent_object );
 
@@ -80,6 +88,11 @@ void iComponent::SetObject( const cWeak_Ptr< cObject >& _parent_object )
     m_object_ = _parent_object;
     m_scene_  = _parent_object->m_scene_;
     _parent_object->AddComponent( get_shared() );
+}
+
+void iComponent::destroySelf()
+{
+    Destroy( get_weak() );
 }
 
 void iComponent::registerRecursive()

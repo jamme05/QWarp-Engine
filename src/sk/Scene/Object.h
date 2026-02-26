@@ -58,7 +58,10 @@ namespace sk::Object
 		{
 			auto component = sk::MakeShared< Ty >( std::forward< Args >( _args )... )();
 
-			component->m_uuid_ = GenerateRandomUUID();
+			component->m_uuid_   = GenerateRandomUUID();
+			// Assign beforehand so we don't get stuck in the AddComponent
+			// TODO: Make the AddComponent safer to call.
+			component->m_object_ = get_weak();
 
 			AddComponent( component );
 
@@ -185,6 +188,8 @@ namespace sk::Object
 		void disableRecursive();
 
 	sk_private:
+		void destroySelf() final;
+
 		cShared_ptr< iComponent > m_root;
 
 		// TODO: Use typedefs/using

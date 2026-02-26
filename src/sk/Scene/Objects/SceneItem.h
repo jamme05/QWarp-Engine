@@ -29,13 +29,20 @@ namespace sk::Object
         friend class sk::Object::iComponent;
         friend class sk::cSceneManager;
     public:
-        virtual void Destroy() = 0;
-        void Destroy( const cWeak_Ptr< cSceneItem >& _target );
+        // Destroy this Object/Component
+        void Destroy();
+        // Destroy a target Object/Component
+        static void Destroy( const cWeak_Ptr< cSceneItem >& _target );
 
+        // Will not be assigned during the construction.
 		[[ nodiscard ]] auto& GetUUID () const { return m_uuid_; }
+        // Will not be assigned during the construction.
         [[ nodiscard ]] auto& GetScene() const { return *m_scene_; }
 
     private:
+        // As this doesn't have a way to get itself shared. We're gonna have the object and component do it themselves.
+        virtual void destroySelf() = 0;
+
         cScene* m_scene_;
 		cUUID   m_uuid_;
     };

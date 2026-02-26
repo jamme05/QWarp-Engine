@@ -133,6 +133,12 @@ void cSceneManager::update()
 		for( auto& object : scene.GetObjects() )
 			object->enableRecursive();
 	}
+
+	for( auto& scene : m_loaded_scenes_ | std::views::values )
+	{
+		if( scene.IsLoaded() )
+			scene->cleanItems();
+	}
 } // update
 
 void cSceneManager::render()
@@ -141,8 +147,11 @@ void cSceneManager::render()
 	Scene::cCameraManager::get().render();
 } // render
 
-void cSceneManager::on_scene_loaded( Assets::eEventType _action, cAsset_Ref< cScene >& _ref )
+void cSceneManager::on_scene_loaded( const Assets::eEventType _action, cAsset_Ref< cScene >& _ref )
 {
+	if( _action == Assets::eEventType::kUnload )
+		return;
+
 	auto& self = get();
 	self.m_scene_mutex_.lock();
 	self.m_recently_loaded_scenes_.emplace( _ref.Get() );
