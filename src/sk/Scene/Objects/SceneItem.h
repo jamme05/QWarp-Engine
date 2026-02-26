@@ -26,12 +26,18 @@ namespace sk::Object
 
 		friend class sk::cScene;
         friend class sk::Object::cObject;
+        friend class sk::Object::iComponent;
         friend class sk::cSceneManager;
     public:
-		[[ nodiscard ]] auto& GetUUID() const { return m_uuid_; }
+        virtual void Destroy() = 0;
+        void Destroy( const cWeak_Ptr< cSceneItem >& _target );
+
+		[[ nodiscard ]] auto& GetUUID () const { return m_uuid_; }
+        [[ nodiscard ]] auto& GetScene() const { return *m_scene_; }
 
     private:
-		cUUID m_uuid_;
+        cScene* m_scene_;
+		cUUID   m_uuid_;
     };
 } // sk::Object::
 

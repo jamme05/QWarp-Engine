@@ -58,14 +58,11 @@ namespace sk::Object
 		{
 			auto component = sk::MakeShared< Ty >( std::forward< Args >( _args )... )();
 
-			component->m_object_ = get_weak();
-			component->m_uuid_   = GenerateRandomUUID();
-			component->SetParent( m_root );
+			component->m_uuid_ = GenerateRandomUUID();
 
-			if constexpr( std::is_base_of_v< Components::cMeshComponent, Ty > )
-				m_mesh_components_.emplace_back( component );
-			else
-				m_components_.insert( std::pair{ Ty::getStaticType(), component } );
+			AddComponent( component );
+
+			component->SetParent( m_root );
 
 			return component;
 		} // addComponent
@@ -199,9 +196,6 @@ namespace sk::Object
 		vector< cShared_ptr< Components::cMeshComponent > >        m_mesh_components_;
 
 		cStringID m_name;
-
-		// TODO: Make this into a weak ptr.
-		cScene* m_parent_scene = nullptr;
 
 		// TODO: Actually implament these. Follow Unity's design when it comes to layers. But do allow multiple tags.
 		std::vector< str_hash > m_tags_;

@@ -7,3 +7,8 @@
 #include "SceneItem.h"
 
 using namespace sk::Object;
+
+void cSceneItem::Destroy( const cWeak_Ptr< cSceneItem >& _target )
+{
+
+}

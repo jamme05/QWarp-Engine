@@ -62,6 +62,7 @@ namespace sk::Object
 
 		[[ nodiscard ]]
 		bool         GetIsInternal() const { return m_internal_; }
+		bool         GetIsRoot    () const { return m_is_root_; }
 
 		virtual void PostEvent( uint16_t _event ) = 0;
 
@@ -118,6 +119,7 @@ namespace sk::Object
 		bool  m_enabled_  = true;
 		// Internal will hide it from the editor.
 		bool  m_internal_ = false;
+		bool  m_is_root_  = false;
 	};
 
 	// TODO: Check if type is necessary

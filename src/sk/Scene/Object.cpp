@@ -44,6 +44,8 @@ sk::Object::cObject::~cObject()
 
 void sk::Object::cObject::AddComponent( const cShared_ptr< iComponent >& _component )
 {
+    _component->SetObject( get_weak() );
+
     if( _component->getClassTypeInfo() == kTypeInfo< Components::cMeshComponent > )
         m_mesh_components_.emplace_back( sk::cShared_ptr{ _component }.Cast< Components::cMeshComponent >() );
     else

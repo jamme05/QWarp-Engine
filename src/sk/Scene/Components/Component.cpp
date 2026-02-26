@@ -10,7 +10,8 @@ using namespace sk::Object;
 iComponent::iComponent( cSerializedObject& _object )
 {
     _object.BeginRead( this );
-    m_uuid_ = cUUID::FromString( _object.ReadValue< std::string_view >( "UUID" ) );
+    // TODO: Remove this const cast.
+    const_cast< cUUID& >( GetUUID() ) = cUUID::FromString( _object.ReadValue< std::string_view >( "UUID" ) );
     m_transform_ = sk::MakeShared< cTransform >( *_object.ReadValue< cSerializedObject* >( "Transform" ) );
     if( cSerializedObject* children; _object.TryReadValue( "children", children ) )
     {
@@ -28,6 +29,13 @@ iComponent::~iComponent()
 
 void iComponent::SetParent( const cShared_ptr< iComponent >& _component )
 {
+    // Already childed
+    if( m_parent_ == _component )
+        return;
+
+    if( const auto& new_object = _component->m_object_; m_object_ != _component->m_object_ )
+        SetObject( new_object );
+
     if( m_parent_ && !m_parent_.Lock()->m_children_.empty() )
     {
         if( const auto itr = std::ranges::find( m_parent_->m_children_, get_shared() ); itr != m_parent_->m_children_.end() )
@@ -46,7 +54,7 @@ auto iComponent::Serialize() -> cSerializedObject
 {
     cSerializedObject object{ this };
     object.BeginWrite();
-    object.WriteValue( "UUID", m_uuid_.ToString() );
+    object.WriteValue( "UUID", GetUUID().ToString() );
     object.WriteValue( "Transform", m_transform_->Serialize() );
 
     std::vector< cSerializedObject > children;
@@ -70,6 +78,7 @@ void iComponent::SetObject( const cWeak_Ptr< cObject >& _parent_object )
     if( m_object_.is_valid() )
         m_object_->RemoveComponent( get_shared() );
     m_object_ = _parent_object;
+    m_scene_  = _parent_object->m_scene_;
     _parent_object->AddComponent( get_shared() );
 }
 
