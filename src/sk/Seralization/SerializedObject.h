@@ -343,7 +343,10 @@ namespace sk
     auto cSerializedObject::GetArray() -> std::span< Ty >
     {
         // TODO: Ensure that the type is correct.
-        return std::span< Ty >{ std::get< Ty* >( m_element_data_ ), m_element_count_ };
+        if( auto ptr = std::get_if< Ty* >( &m_element_data_ ) )
+            return std::span< Ty >{ *ptr, m_element_count_ };
+
+        return std::span< Ty >{};
     }
 
     template< cSerializedObject::sMemberVariable Target, reflected Value >
