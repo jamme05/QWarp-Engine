@@ -89,7 +89,7 @@ void cObjectListTab::_drawScene( const cScene& _scene )
     selection_manager.EndSelection();
 }
 
-void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
+void cObjectListTab::_drawObjectRecursive( Object::cObject& _object )
 {
     auto& selection_manager = Managers::cSelectionManager::get();
 
@@ -101,7 +101,12 @@ void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
         flags |= ImGuiTreeNodeFlags_Leaf;
 
     if( selection_manager.Selectable( _object.GetUUID().Hash(), _object.get_weak() ) )
+    {
         flags |= ImGuiTreeNodeFlags_Selected;
+
+        if( ImGui::IsKeyDown( ImGuiKey_Delete ) )
+            _object.Destroy();
+    }
 
     if( !ImGui::TreeNodeEx( _object.GetUUID().ToString().c_str(), flags, "%s", _object.GetName().c_str() ) )
         return;
@@ -120,7 +125,7 @@ void cObjectListTab::_drawObjectRecursive( const Object::cObject& _object )
     ImGui::TreePop();
 }
 
-void cObjectListTab::_drawComponentsRecursive( const Object::iComponent& _component )
+void cObjectListTab::_drawComponentsRecursive( Object::iComponent& _component )
 {
     // TODO: Allow the user to toggle the visual
     if( !m_debug_view_ && _component.GetIsInternal() )
@@ -138,7 +143,12 @@ void cObjectListTab::_drawComponentsRecursive( const Object::iComponent& _compon
     flags |= has_non_internal_child ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf;
 
     if( selection_manager.Selectable( _component.GetUUID().Hash(), _component.get_weak() ) )
+    {
         flags |= ImGuiTreeNodeFlags_Selected;
+
+        if( !_component.GetIsInternal() && ImGui::IsKeyDown( ImGuiKey_Delete ) )
+            _component.Destroy();
+    }
 
     if( !ImGui::TreeNodeEx( _component.GetUUID().ToString().c_str(), flags, "%s", type_name.c_str() ) )
         return;

@@ -61,19 +61,15 @@ void cSelectionManager::BeginSelection( class_info_t& _group_class, const ImGuiM
 {
     auto& group = m_groups_[ _group_class.getTypeHash() ];
     group.group_class = &_group_class;
+    group.all_marked_for_selection = false;
     group.ids.clear();
 
-    m_active_group_   = &group;
+    m_active_group_ = &group;
 
     m_marked_for_deletion_start_ = m_marked_for_deletion_end_ = std::numeric_limits< size_t >::max();
 
     const auto ms_io = ImGui::BeginMultiSelect( _flags, static_cast< int >( group.selected.size() ) );
-    group.Apply( ms_io );
-}
-
-void cSelectionManager::MarkForDeletion( const bool _single )
-{
-
+    group.Apply( ms_io, false );
 }
 
 bool cSelectionManager::Selectable( uint64_t _identifier, const cWeak_Ptr< iClass >& _instance )
@@ -102,7 +98,8 @@ void cSelectionManager::EndSelection()
     auto& group = *m_active_group_;
 
     const auto ms_io = ImGui::EndMultiSelect();
-    group.Apply( ms_io );
+    group.Apply( ms_io, true );
+    group.Clean();
 
     m_active_group_ = nullptr;
 }
@@ -117,8 +114,16 @@ cSelectionManager::sSelectionGroup::sSelectionGroup()
 
 }
 
-void cSelectionManager::sSelectionGroup::Apply( ImGuiMultiSelectIO* _ms_io )
+void cSelectionManager::sSelectionGroup::Apply( ImGuiMultiSelectIO* _ms_io, const bool _end )
 {
+    if( all_marked_for_selection )
+    {
+        for( auto& id : ids )
+            selected.emplace( id );
+
+        all_marked_for_selection = false;
+    }
+
     for( const auto& req : _ms_io->Requests )
     {
         if( req.Type == ImGuiSelectionRequestType_SetAll )
@@ -127,8 +132,16 @@ void cSelectionManager::sSelectionGroup::Apply( ImGuiMultiSelectIO* _ms_io )
             // Maybe make everything being selected into a flag?
             if( req.Selected )
             {
-                for( size_t i = 0; i < ids.size(); i++ )
-                    selected.emplace( ids[ i ] );
+                if( _end )
+                {
+                    for( auto& id : ids )
+                        selected.emplace( id );
+                }
+                else
+                {
+                    for( auto& id : items | std::views::keys )
+                        selected.emplace( id );
+                }
             }
         }
         else if( req.Type == ImGuiSelectionRequestType_SetRange )
@@ -143,6 +156,22 @@ void cSelectionManager::sSelectionGroup::Apply( ImGuiMultiSelectIO* _ms_io )
                     selected.erase( ids[ i ] );
             }
         }
+    }
+}
+
+void cSelectionManager::sSelectionGroup::Clean()
+{
+    std::vector< uint64_t > to_remove;
+    for( auto& [ id, instance ] : items )
+    {
+        if( instance.instance == nullptr )
+            to_remove.emplace_back( id );
+    }
+
+    for( auto& id : to_remove )
+    {
+        items.erase( id );
+        selected.erase( id );
     }
 }
 

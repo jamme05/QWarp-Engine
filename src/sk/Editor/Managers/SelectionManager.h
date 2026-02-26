@@ -40,13 +40,16 @@ namespace sk::Editor::Managers
         {
             sSelectionGroup();
 
-            void Apply( ImGuiMultiSelectIO* _ms_io );
+            void Apply( ImGuiMultiSelectIO* _ms_io, bool _end );
             void ClearSelected();
+            // Removes any expired weak pointers.
+            void Clean();
 
             class_info_t*  group_class;
             id_vec_t       ids;
             items_map_t    items;
             selected_map_t selected;
+            bool           all_marked_for_selection;
         };
 
         cSelectionManager();
@@ -69,7 +72,6 @@ namespace sk::Editor::Managers
         void BeginSelection( ImGuiMultiSelectFlags _flags = ImGuiMultiSelectFlags_None );
 
         void BeginSelection( class_info_t& _group_class, ImGuiMultiSelectFlags _flags = ImGuiMultiSelectFlags_None );
-        void MarkForDeletion( bool _single = false );
         bool Selectable( uint64_t _identifier, const cWeak_Ptr< iClass >& _instance );
         void EndSelection();
 

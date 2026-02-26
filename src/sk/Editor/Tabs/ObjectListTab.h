@@ -29,8 +29,8 @@ namespace sk::Editor::Tabs
 
     private:
         void _drawScene( const cScene& _scene );
-        void _drawObjectRecursive( const Object::cObject& _object );
-        void _drawComponentsRecursive( const Object::iComponent& _component );
+        void _drawObjectRecursive( Object::cObject& _object );
+        void _drawComponentsRecursive( Object::iComponent& _component );
 
         bool m_debug_view_      = false;
         bool m_show_components_ = true;
