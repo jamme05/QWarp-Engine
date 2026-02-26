@@ -13,7 +13,7 @@
 sk::Object::cObject::cObject( const std::string& _name )
 : m_name( _name )
 {
-    m_root   = AddComponent< Components::cTransformComponent >();
+    m_root   = CreateComponent< Components::cTransformComponent >();
     SetLayer( 0 );
 }
 

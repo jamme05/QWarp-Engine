@@ -126,7 +126,7 @@ void cApp::create()
 
 	auto mesh = m_scene->create_object< sk::Object::cObject >( "Mesh Test 2" );
 	mesh->GetTransform().SetLocalPosition( { 0.0f, -16.0f, 90.0f } );
-	auto component = mesh->AddComponent< sk::Object::Components::cMeshComponent >( christopher_m, mat1.first );
+	auto component = mesh->CreateComponent< sk::Object::Components::cMeshComponent >( christopher_m, mat1.first );
 	component->enabled();
 	component->SetScale( sk::cVector3f{ 100.0f } );
 	
@@ -137,8 +137,8 @@ void cApp::create()
 
 	mesh = m_scene->create_object< sk::Object::cObject >( "Mesh Test 3" );
 	mesh->GetTransform().SetLocalPosition( { -0.1f, 0.0f, 2.5f } );
-	auto spin_component = mesh->AddComponent< sk::Object::Components::cSpinComponent >( sk::cVector3f{ 0.0f, 5.0f, 0.0f } );
-	component = mesh->AddComponent< sk::Object::Components::cMeshComponent >( toilet_m, mat2.first );
+	auto spin_component = mesh->CreateComponent< sk::Object::Components::cSpinComponent >( sk::cVector3f{ 0.0f, 5.0f, 0.0f } );
+	component = mesh->CreateComponent< sk::Object::Components::cMeshComponent >( toilet_m, mat2.first );
 	component->enabled();
 	component->SetParent( spin_component );
 	
@@ -146,21 +146,21 @@ void cApp::create()
 	auto light_object = m_scene->create_object< sk::Object::cObject >( "Directional Light" );
 	light_settings.shadow_resolution = 1024;
 	light_settings.casts_shadows     = true;
-	auto directional_light = light_object->AddComponent< sk::Object::Components::cLightComponent >( light_settings );
+	auto directional_light = light_object->CreateComponent< sk::Object::Components::cLightComponent >( light_settings );
 	light_object->GetTransform().SetLocalRotation( { -45.0f, 0.0f, 0.0f } );
 
 	light_object = m_scene->create_object< sk::Object::cObject >( "Point Light" );
 	light_settings.type              = sk::Scene::Light::eType::kPoint;
 	light_settings.casts_shadows     = false;
 	light_settings.shadow_resolution = 256;
-	auto point_light = light_object->AddComponent< sk::Object::Components::cLightComponent >( light_settings );
+	auto point_light = light_object->CreateComponent< sk::Object::Components::cLightComponent >( light_settings );
 	light_object->GetTransform().SetLocalRotation( { -45.0f, 0.0f, 0.0f } );
 
 	light_object = m_scene->create_object< sk::Object::cObject >( "Spot Light 1" );
 	light_settings.type              = sk::Scene::Light::eType::kSpot;
 	light_settings.casts_shadows     = true;
 	light_settings.shadow_resolution = 512;
-	auto spot_light = light_object->AddComponent< sk::Object::Components::cLightComponent >( light_settings );
+	auto spot_light = light_object->CreateComponent< sk::Object::Components::cLightComponent >( light_settings );
 	light_object->GetTransform().SetLocalRotation( { -45.0f, 0.0f, 0.0f } );
 	light_object->GetTransform().SetLocalPosition( { 0.0f, 5.0f, 0.0f } );
 
@@ -168,7 +168,7 @@ void cApp::create()
 	light_settings.type              = sk::Scene::Light::eType::kSpot;
 	light_settings.casts_shadows     = true;
 	light_settings.shadow_resolution = 512;
-	spot_light = light_object->AddComponent< sk::Object::Components::cLightComponent >( light_settings );
+	spot_light = light_object->CreateComponent< sk::Object::Components::cLightComponent >( light_settings );
 	light_object->GetTransform().SetLocalRotation( { -45.0f, 90.0f, 0.0f } );
 	light_object->GetTransform().SetLocalPosition( { 0.0f, 5.0f, 0.0f } );
 
@@ -176,7 +176,7 @@ void cApp::create()
 	light_settings.type              = sk::Scene::Light::eType::kSpot;
 	light_settings.casts_shadows     = true;
 	light_settings.shadow_resolution = 512;
-	spot_light = light_object->AddComponent< sk::Object::Components::cLightComponent >( light_settings );
+	spot_light = light_object->CreateComponent< sk::Object::Components::cLightComponent >( light_settings );
 	light_object->GetTransform().SetLocalRotation( { -45.0f, 180.0f, 0.0f } );
 	light_object->GetTransform().SetLocalPosition( { 0.0f, 5.0f, 0.0f } );
 
@@ -191,8 +191,8 @@ void cApp::create()
 		{
 			auto mesh_object = m_scene->create_object< sk::Object::cObject >( "Clone" );
 			mesh_object->GetTransform().SetLocalPosition( { x * 2, 0.0f, y * 2 } );
-			auto spin = mesh_object->AddComponent< sk::Object::Components::cSpinComponent >( sk::cVector3f{ 0.0f, dis( gen ), 0.0f } );
-			auto mesh_component = mesh_object->AddComponent< sk::Object::Components::cMeshComponent >( christopher_m, mat1.first );
+			auto spin = mesh_object->CreateComponent< sk::Object::Components::cSpinComponent >( sk::cVector3f{ 0.0f, dis( gen ), 0.0f } );
+			auto mesh_component = mesh_object->CreateComponent< sk::Object::Components::cMeshComponent >( christopher_m, mat1.first );
 			mesh_component->enabled();
 			mesh_component->SetRotation( { -90.0f, 0.0f, 0.0f } );
 			mesh_component->SetParent( spin );

@@ -54,7 +54,7 @@ namespace sk::Object
 
 		template< class Ty, class... Args >
 		requires ( std::is_base_of_v< iComponent, Ty > && std::constructible_from< Ty, Args... > )
-		auto AddComponent( Args&&... _args ) -> cShared_ptr< Ty >
+		auto CreateComponent( Args&&... _args ) -> cShared_ptr< Ty >
 		{
 			auto component = sk::MakeShared< Ty >( std::forward< Args >( _args )... )();
 

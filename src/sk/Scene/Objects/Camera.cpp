@@ -31,7 +31,7 @@ namespace sk::Object
 			.far = 2000.0f
 		};
 
-		m_camera_ = AddComponent< Components::cCameraComponent >( viewport, scissor, settings, Components::cCameraComponent::eType::kPerspective );
+		m_camera_ = CreateComponent< Components::cCameraComponent >( viewport, scissor, settings, Components::cCameraComponent::eType::kPerspective );
 		SetRoot( m_camera_ );
 	}
 
