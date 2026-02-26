@@ -698,8 +698,22 @@ namespace sk
 		requires std::is_base_of_v< Ty, Ot >
 		cWeak_Ptr< Ot > Cast()
 		{
-			// TODO: Introduce a dynamic cast here
 			cWeak_Ptr< Ot > other{};
+			other.m_data_ = m_data_;
+			inc_weak();
+
+			return other;
+		} // cast
+
+		template< class Ot >
+		requires std::is_base_of_v< Ty, Ot >
+		cWeak_Ptr< Ot > DynCast()
+		{
+			if( dynamic_cast< Ot* >( get() ) == nullptr )
+				return nullptr;
+
+			cWeak_Ptr< Ot > other{};
+
 			other.m_data_ = m_data_;
 			inc_weak();
 
