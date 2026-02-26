@@ -443,7 +443,7 @@ namespace sk::registry
 } // sk::
 
 #define REGISTER_TYPE_INTERNAL_0( Type, IdLocation, Deprecated ) \
-    inline auto IdLocation = sk::Reflection::cType_Manager::RegisterType< Type >();
+    static auto IdLocation = sk::Reflection::cType_Manager::RegisterType< Type >();
 
 // TODO: Add some way to automatically detect if the current file is a cpp/source file.
 // Probably using some build system.
