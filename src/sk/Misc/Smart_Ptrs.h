@@ -175,10 +175,10 @@ namespace sk
 		bool operator==( const cPtr_base& _other ) const { return m_data_ == _other.m_data_; }
 
 	protected:
-		void inc     ( void ) const { if( m_data_ ) m_data_->inc(); }
-		void dec     ( void ) const { if( m_data_ ) m_data_->dec(); }
-		void inc_weak( void ) const { if( m_data_ ) m_data_->inc_weak(); }
-		void dec_weak( void ) const { if( m_data_ ) m_data_->dec_weak(); }
+		void inc     () const { if( m_data_ ) [[ likely ]] m_data_->inc(); }
+		void dec     () const { if( m_data_ ) [[ likely ]] m_data_->dec(); }
+		void inc_weak() const { if( m_data_ ) [[ likely ]] m_data_->inc_weak(); }
+		void dec_weak() const { if( m_data_ ) [[ likely ]] m_data_->dec_weak(); }
 
 		Ptr_logic::cData_base* m_data_ = nullptr;
 
@@ -421,6 +421,7 @@ namespace sk
 
 			if( m_data_ )
 			{
+				[[ likely ]]
 				inc();
 			}
 		} // cShared_ptr
@@ -434,6 +435,7 @@ namespace sk
 		{
 			if( m_data_ != _right.m_data_ && this != &_right )
 			{
+				[[ likely ]]
 				dec();
 				m_data_ = _right.m_data_;
 				inc();
@@ -446,6 +448,7 @@ namespace sk
 		{
 			if( m_data_ != _right.m_data_ )
 			{
+				[[ likely ]]
 				dec();
 				m_data_ = _right.m_data_;
 			}
@@ -753,7 +756,7 @@ namespace sk
 		[[ nodiscard ]] auto get_weak  () const -> cWeak_Ptr  < Ty > { return m_self_; }
 
 	protected:
-		cShared_from_this()
+		cShared_from_this() // TODO: Explain the reason behind this solution and try to make it safer.
 		: iShared_From_this( *( reinterpret_cast< Ptr_logic::cData_base** >( static_cast< Ty* >( this ) ) - 1 ) )
 		{} // cShared_from_this
 	};
