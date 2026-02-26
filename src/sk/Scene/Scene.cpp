@@ -59,4 +59,24 @@ namespace sk
 		object.EndWrite();
 		return object;
 	}
+
+	void cScene::cleanItems()
+	{
+		for( auto& target : m_marked_for_removal_ )
+		{
+			if( auto object = target.DynCast< Object::cObject >() )
+			{
+				auto& uuid = object->GetUUID();
+				auto pred = [ &uuid ]( auto& _object ){ return _object->GetUUID() == uuid; };
+				if( auto itr = std::ranges::find_if( m_objects, pred ); itr != m_objects.end() )
+					m_objects.erase( itr );
+			}
+			else if( auto component = target.DynCast< Object::iComponent >() )
+			{
+
+			}
+		}
+
+		m_marked_for_removal_.clear();
+	}
 } // sk::

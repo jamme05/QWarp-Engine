@@ -20,6 +20,9 @@ namespace sk
 	SK_ASSET_CLASS( Scene )
 	{
 		SK_CLASS_BODY( Scene )
+
+		friend class sk::Object::cSceneItem;
+		friend class sk::cSceneManager;
 	public:
 		cScene() = default;
 		explicit cScene( cSerializedObject& _object );
@@ -32,7 +35,8 @@ namespace sk
 		cShared_ptr< Ty > create_object( const std::string& _name, Args... _args )
 		{
 			cShared_ptr< Ty > shared = sk::MakeShared< Ty >( _name, _args... );
-			shared->m_uuid_ = GenerateRandomUUID();
+			shared->m_uuid_  = GenerateRandomUUID();
+			shared->m_scene_ = this;
 			m_objects.emplace_back( shared );
 			return shared;
 		} // create_object
@@ -45,8 +49,11 @@ namespace sk
 		auto Serialize() -> cSerializedObject override;
 
 	private:
+		void cleanItems();
 		// TODO: Replace this with a map.
-		vector< cShared_ptr< Object::cObject > > m_objects = {};
+
+		std::vector< cWeak_Ptr< Object::cSceneItem > > m_marked_for_removal_;
+		vector< cShared_ptr< Object::cObject > >       m_objects = {};
 	};
 
 } // sk::
