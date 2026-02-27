@@ -31,7 +31,7 @@ namespace sk::Editor::Utils
         {
             callback_t callback;
         };
-        using value_t     = std::variant< std::monostate, bool*, callback_t, sCustom, eSetting, std::unique_ptr< cContextMenu >, std::unique_ptr< sBranch > >;
+        using value_t = std::variant< std::monostate, bool*, callback_t, sCustom, eSetting, std::unique_ptr< cContextMenu >, std::unique_ptr< sBranch > >;
 
         struct sItem
         {
@@ -50,7 +50,12 @@ namespace sk::Editor::Utils
         };
 
         cContextMenu();
+        cContextMenu( const cContextMenu& ) = default;
+        cContextMenu( cContextMenu&& ) = default;
         ~cContextMenu();
+
+        cContextMenu& operator=( const cContextMenu& ) = default;
+        cContextMenu& operator=( cContextMenu&& ) = default;
 
         bool Draw( const std::string_view& _name = {} );
         bool DrawOnWindow( const std::string_view& _name = {} );
@@ -62,6 +67,7 @@ namespace sk::Editor::Utils
         auto Add( const std::string& _name, bool& _bool_value ) -> cContextMenu&;
         // Adds a button item to the menu
         auto Add( const std::string& _name, const callback_t& _callback ) -> cContextMenu&;
+        auto Add( const std::string& _name, cContextMenu _menu ) -> cContextMenu&;
         // Inject a function to be ran during the rendering. Great for doing extra ImGui calls.
         auto AddCustom( const callback_t& _custom ) -> cContextMenu&;
 
@@ -115,7 +121,7 @@ namespace sk::Editor::Utils
 
         void Complete();
 
-        void SetUserData( void* _data );
+        void SetNextUserData( void* _data );
 
         bool IsValid() const;
 

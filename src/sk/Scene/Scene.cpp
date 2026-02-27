@@ -18,7 +18,7 @@ namespace sk
 		for( auto& obj : _object.ReadValue< cSerializedObject* >( "objects" )->GetArray< cSerializedObject >() )
 		{
 			auto& object = m_objects.emplace_back( obj.ConstructSharedClass().Cast< Object::cObject >() );
-			object->m_scene_ = this;
+			object->setSceneRecursive( *this );
 		}
 
 		_object.EndRead();
@@ -28,6 +28,14 @@ namespace sk
 	{
 		m_objects.clear();
 	} // ~cScene
+
+	void cScene::AddObject( const cShared_ptr< Object::cObject >& _obj )
+	{
+		_obj->setSceneRecursive( *this );
+		m_objects.emplace_back( _obj );
+		_obj->registerRecursive();
+		_obj->enableRecursive();
+	}
 
 	void cScene::force_render()
 	{

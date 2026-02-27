@@ -6,6 +6,10 @@
 
 #include "Type_Manager.h"
 
+#include <sk/Reflection/RuntimeClass.h>
+
+#include <ranges>
+
 namespace sk::Reflection
 {
     cType_Manager::cType_Manager()
@@ -27,6 +31,23 @@ namespace sk::Reflection
 
         return false;
     } // RegisterType
+
+    auto cType_Manager::GetDerivedTypes( const iRuntimeClass& _base_class ) -> std::vector< const iRuntimeClass* >
+    {
+        std::vector< const iRuntimeClass* > derived;
+
+        for( const auto& type : m_types_ | std::views::values )
+        {
+            if( type->type != sType_Info::eType::kClass )
+                continue;
+
+            const auto runtime_class = type->as_class_info()->runtime_class;
+            if( runtime_class->isDerivedFrom( _base_class ) )
+                derived.emplace_back( type->as_class_info()->runtime_class );
+        }
+
+        return derived;
+    }
 
     cType_Manager::type_storage_t* cType_Manager::register_type( type_info_t _type_info, const bool _extract )
     {

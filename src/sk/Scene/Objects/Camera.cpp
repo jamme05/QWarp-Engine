@@ -13,6 +13,8 @@
 
 namespace sk::Object
 {
+	cCamera::cCamera() : cCamera( "Camera" ){}
+
 	cCamera::cCamera( const std::string& _name )
 	: cObject( _name )
 	{

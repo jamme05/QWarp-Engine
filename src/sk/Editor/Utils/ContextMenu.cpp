@@ -33,11 +33,18 @@ bool cContextMenu::Draw( const std::string_view& _name )
 {
     if( m_parent_menu_ == nullptr )
     {
+        // ImGuiContext& g = *GImGui;
+        // ImGuiWindow* window = g.CurrentWindow;
+        // ImGuiID parent_id = window ? window->IDStack.back() : g.LastItemData.ID;
+
         // Root menu/Popup
         if( ImGui::BeginPopupContextItem( _name.data() ) )
         {
+            // g.CurrentWindow->IDStack.push_back( parent_id );
             _drawItems();
+            // g.CurrentWindow->IDStack.pop_back();
             ImGui::EndPopup();
+            m_user_data_ = nullptr;
             return true;
         }
     }
@@ -46,8 +53,10 @@ bool cContextMenu::Draw( const std::string_view& _name )
         // Sub menu
         _drawItems();
         ImGui::EndMenu();
+        m_user_data_ = nullptr;
         return true;
     }
+    m_user_data_ = nullptr;
     return false;
 }
 
@@ -90,6 +99,16 @@ auto cContextMenu::Add( const std::string& _name, bool& _bool_value ) -> cContex
 auto cContextMenu::Add( const std::string& _name, const callback_t& _callback ) -> cContextMenu&
 {
     _add( sItem{ _name, _callback } );
+
+    return *this;
+}
+
+auto cContextMenu::Add( const std::string& _name, cContextMenu _menu ) -> cContextMenu&
+{
+    auto menu = std::make_unique< cContextMenu >( std::move( _menu ) );
+    menu->m_parent_menu_ = this;
+
+    _add( sItem{ _name, std::move( menu ) } );
 
     return *this;
 }
@@ -238,7 +257,7 @@ auto cContextMenu::AddSubMenu( const std::string& _name ) -> cContextMenu&
     auto temp_menu = std::make_unique< cContextMenu >();
     temp_menu->m_parent_menu_ = this;
 
-    auto ptr = temp_menu.get();
+    const auto ptr = temp_menu.get();
 
     _add( { _name, std::move( temp_menu ) } );
 
@@ -274,7 +293,7 @@ void cContextMenu::Complete()
     m_active_builder_stack_.pop();
 }
 
-void cContextMenu::SetUserData( void* _data )
+void cContextMenu::SetNextUserData( void* _data )
 {
     SK_BREAK_RET_IF( sk::Severity::kEditor, !IsValid(), "Error: Context menu isn't properly initialized." )
 

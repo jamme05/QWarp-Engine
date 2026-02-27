@@ -21,7 +21,7 @@ cTransform::cTransform( cSerializedObject& _object )
     m_scale_    = _object.ReadValue< cVector3f >( "Scale" );
     _object.EndRead();
 
-    Update();
+    MarkDirty();
 }
 
 void cTransform::SetLocalPosition( const cVector3f& _position )

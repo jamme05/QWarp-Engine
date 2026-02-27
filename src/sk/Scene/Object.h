@@ -41,7 +41,7 @@ namespace sk::Object
 		friend class sk::cSceneManager;
 	sk_public:
 		// TODO: Create templated constructor with root type + parameters
-		explicit cObject( const std::string& _name ); // iObject
+		explicit cObject( const std::string& _name = "Empty" ); // iObject
 		explicit cObject( cSerializedObject& _object );
 
 		template< class Ty = iComponent, class... Args >
@@ -58,7 +58,6 @@ namespace sk::Object
 		{
 			auto component = sk::MakeShared< Ty >( std::forward< Args >( _args )... )();
 
-			component->m_uuid_   = GenerateRandomUUID();
 			// Assign beforehand so we don't get stuck in the AddComponent
 			// TODO: Make the AddComponent safer to call.
 			component->m_object_ = get_weak();
@@ -188,6 +187,7 @@ namespace sk::Object
 		void disableRecursive();
 
 	sk_private:
+		void setSceneRecursive( cScene& _scene ) final;
 		void destroySelf() final;
 
 		cShared_ptr< iComponent > m_root;

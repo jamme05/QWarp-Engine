@@ -50,6 +50,10 @@ void sk::Object::cObject::AddComponent( const cShared_ptr< iComponent >& _compon
         m_mesh_components_.emplace_back( sk::cShared_ptr{ _component }.Cast< Components::cMeshComponent >() );
     else
 	    m_components_.emplace( std::pair{ _component->getClassType(), _component } );
+
+    _component->registerEvents();
+    _component->registerRecursive();
+    _component->enableRecursive();
 }
 
 void sk::Object::cObject::RemoveComponent( const cShared_ptr< iComponent >& _component )
@@ -145,6 +149,16 @@ void sk::Object::cObject::disableRecursive()
         child->disableRecursive();
 
     m_root->disableRecursive();
+}
+
+void sk::Object::cObject::setSceneRecursive( cScene& _scene )
+{
+    for( auto& child : m_children_ )
+        child->setSceneRecursive( _scene );
+
+    m_root->setSceneRecursive( _scene );
+
+    m_scene_ = &_scene;
 }
 
 void sk::Object::cObject::destroySelf()

@@ -51,6 +51,7 @@ void iComponent::SetParent( const cShared_ptr< iComponent >& _component )
         m_object_ = _component->m_object_;
     }
     m_transform_->SetParent( ( _component != nullptr ) ? _component->m_transform_ : nullptr );
+    m_transform_->Update();
 }
 
 auto iComponent::Serialize() -> cSerializedObject
@@ -90,6 +91,14 @@ void iComponent::SetObject( const cShared_ptr< cObject >& _parent_object )
     _parent_object->AddComponent( get_shared() );
 }
 
+void iComponent::setSceneRecursive(cScene& _scene)
+{
+    for( auto& child : m_children_ )
+        child->setSceneRecursive( _scene );
+
+    m_scene_ = &_scene;
+}
+
 void iComponent::destroySelf()
 {
     Destroy( get_weak() );
@@ -97,10 +106,10 @@ void iComponent::destroySelf()
 
 void iComponent::registerRecursive()
 {
-    m_transform_->Update();
     for( auto& child : m_children_ )
         child->registerRecursive();
     registerEvents();
+    m_transform_->Update( true );
 }
 
 void iComponent::enableRecursive()

@@ -15,6 +15,7 @@ namespace sk::Object
 	{
 		SK_CLASS_BODY( CameraFlight )
 	sk_public:
+		cCameraFlight();
 		explicit cCameraFlight( const std::string& _name, const float _movement_speed = 5.0f, const float _rotation_speed = 40.0f );
 		explicit cCameraFlight( cSerializedObject& _object );
 		~cCameraFlight( void ) override = default;

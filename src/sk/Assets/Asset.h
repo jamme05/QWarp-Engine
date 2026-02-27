@@ -45,7 +45,7 @@ namespace sk
 		
 		static constexpr std::string_view kMetaExtension = "skmeta"; // = Skape Meta
 	public:
-		enum eFlags : uint8_t
+		enum eFlags : uint16_t
 		{
 			kNone     = 0,
 
@@ -54,17 +54,21 @@ namespace sk
 			kLoaded   = 1 << 0,
 			// If the asset is currently loading
 			kLoading  = 1 << 1,
+			// If the asset is currently unloading
+			kUnloading = 1 << 2,
 
-			kDirty    = 1 << 2,
+			// 3 - 5 reserved
+
+			kDirty    = 1 << 6,
 			
 			// If the asset has a metadata file associated with it.
-			kMetadata = 1 << 3,
+			kMetadata = 1 << 7,
 
 			// If this asset shares a path with other assets. Ex: Multiple assets made from a single gltf file.
-			kSharesPath = 1 << 4,
+			kSharesPath = 1 << 8,
 			
 			// If this asset was manually created.
-			kManualCreation = 1 << 5,
+			kManualCreation = 1 << 9,
 		};
 
 		using dispatcher_t = Event::cDispatcherProxy< cAsset_Meta&, Assets::eEventType >;
@@ -90,6 +94,8 @@ namespace sk
 		bool IsLoaded() const;
 		// If the asset is currently being loaded in, or is already loaded.
 		bool IsLoadingOrLoaded() const;
+		// If the asset is currently being unloaded
+		bool IsUnloading() const;
 		// Gets weather or not the asset has metadata
 		bool HasMetadata() const;
 		

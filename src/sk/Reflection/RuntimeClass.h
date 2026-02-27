@@ -70,6 +70,9 @@ namespace sk
 
 		virtual ~iRuntimeClass() = default;
 
+		static constexpr size_t kDepth    = 0;
+		static constexpr auto   kInherits = sk::array< type_hash, 0 >{};
+
 		virtual iClass* create( void )
 		{
 			// TODO: Create function reflection system to allow for overload selection.
@@ -104,8 +107,12 @@ namespace sk
 		virtual auto getFunction( const str_hash& _hash, const type_hash& _args ) const
 			-> Reflection::member_func_ptr_t { return nullptr; }
 
+		virtual bool IsDefaultConstructible() const { return false; }
+		virtual auto CreateDefault() const -> iClass* { return nullptr; }
+		virtual auto CreateDefaultShared() const -> cShared_ptr< iClass > { return nullptr; }
+		virtual bool IsDeserializable() const { return false; }
 		virtual auto CreateSerialized      ( cSerializedObject& _object ) const -> iClass* { return nullptr; }
-		virtual auto CreateSharedSerialized( cSerializedObject& _object ) const -> cShared_ptr< iClass > { return nullptr; }
+		virtual auto CreateSerializedShared( cSerializedObject& _object ) const -> cShared_ptr< iClass > { return nullptr; }
 
 	private:
 		type_hash   m_hash;
@@ -199,6 +206,9 @@ namespace sk
 		typedef get_parent_class_t< Pa > parent_type;
 
 		static constexpr auto& kParent = Parent;
+		static constexpr auto  kDepth   = Parent.kDepth + 1;
+
+		static constexpr auto kInherits = Parent.kInherits + array{ Parent.getTypeHash() };
 
 		// TODO: Move
 		typedef typename get_parent_class< Pa >::inherits_type inherits_type;
@@ -222,12 +232,13 @@ namespace sk
 			if( *this == _base )
 				return true;
 
-			// The placeholder parent will always be of the type iClass
-			// TODO: Store this in a faster way. Like an array.
-			if constexpr( std::is_same_v< iRuntimeClass, parent_type > )
-				return false;
-			else
-				return Parent.isDerivedFrom( _base );
+			for( auto& base : kInherits )
+			{
+				if( base == _base.getTypeHash() )
+					return true;
+			}
+
+			return false;
 		} // isDerivedFrom
 
 		constexpr bool isBaseOf( const iRuntimeClass& _derived ) const override
@@ -260,6 +271,30 @@ namespace sk
 			return sk::MakeShared< Ty >( std::forward< Args >( _args )... );
 		}
 
+		bool IsDefaultConstructible() const override { return std::is_default_constructible_v< Ty >; }
+
+		auto CreateDefault() const -> iClass* override
+		{
+			if constexpr( std::is_default_constructible_v< Ty > )
+			{
+				return SK_SINGLE( Ty );
+			}
+			SK_BREAK;
+			return nullptr;
+		}
+
+		auto CreateDefaultShared() const -> cShared_ptr< iClass > override
+		{
+			if constexpr( std::is_default_constructible_v< Ty > )
+			{
+				return sk::MakeShared< Ty >();
+			}
+			SK_BREAK;
+			return nullptr;
+		}
+
+		bool IsDeserializable() const override { return std::constructible_from< Ty, cSerializedObject& >; }
+
 		auto CreateSerialized( cSerializedObject& _object ) const ->  iClass* override
 		{
 			if constexpr( std::constructible_from< Ty, cSerializedObject& > )
@@ -270,7 +305,7 @@ namespace sk
 			return nullptr;
 		}
 
-		auto CreateSharedSerialized( cSerializedObject& _object ) const -> cShared_ptr< iClass > override
+		auto CreateSerializedShared( cSerializedObject& _object ) const -> cShared_ptr< iClass > override
 		{
 			if constexpr( std::constructible_from< Ty, cSerializedObject& > )
 			{

@@ -26,6 +26,7 @@ namespace sk::Object::Components
 	{
 		SK_CLASS_BODY( MeshComponent )
 	public:
+		cMeshComponent();
 		explicit cMeshComponent( const cShared_ptr< cAsset_Meta >& _mesh, const cShared_ptr< cAsset_Meta >& _material );
 		explicit cMeshComponent( cSerializedObject& _object );
 

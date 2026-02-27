@@ -33,6 +33,8 @@ namespace sk::Reflection
         [[ nodiscard ]]
         auto& GetTypes() const { return m_types_; }
 
+        auto GetDerivedTypes( const iRuntimeClass& _base_class ) -> std::vector< const iRuntimeClass* >;
+
     private:
         static type_storage_t* register_type( type_info_t _type_info, bool _extract );
         bool register_type( type_info_t _type_info );

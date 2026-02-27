@@ -15,6 +15,7 @@ namespace sk::Object
 	{
 		SK_CLASS_BODY( Camera )
 	public:
+		cCamera();
 		explicit cCamera( const std::string& _name );
 		explicit cCamera( cSerializedObject& _object );
 

@@ -771,7 +771,7 @@ auto cSerializedObject::ConstructClass() -> iClass*
 
 auto cSerializedObject::ConstructSharedClass() -> cShared_ptr< iClass >
 {
-    return GetRuntimeClass()->CreateSharedSerialized( *this );
+    return GetRuntimeClass()->CreateSerializedShared( *this );
 }
 
 void cSerializedObject::BeginRead( iClass* _this )

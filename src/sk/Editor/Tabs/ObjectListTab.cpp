@@ -5,10 +5,10 @@
 #include <sk/Editor/Utils/ContextMenu.h>
 #include <sk/Scene/Scene.h>
 #include <sk/Scene/Managers/SceneManager.h>
+#include <sk/Scene/Components/Internal/Internal_Component.h>
 
 #include <imgui.h>
-
-
+#include <imgui_internal.h>
 
 using namespace sk::Editor::Tabs;
 
@@ -42,12 +42,36 @@ void cObjectListTab::Create()
             const auto& meta = *_meta;
             cSceneManager::get().UnregisterScene( meta.GetUUID() );
         } )
+        .Add< cScene >( "Create Object", [this]( cScene* _scene )
+        {
+            ImGui::CloseCurrentPopup();
+            this->m_creation_target_scene_ = _scene;
+            this->OpenCreationPopup( eCreationType::kObject, nullptr );
+        } )
+    .Complete();
+
+    m_object_context_menu_
+        .Add< Object::cObject >( "Create Child", [this]( Object::cObject* _object )
+        {
+            ImGui::CloseCurrentPopup();
+            this->OpenCreationPopup( eCreationType::kObject, _object->get_weak() );
+        } )
+    .Complete();
+
+    m_component_context_menu_
+        .Add< Object::iComponent >( "Create Child", [this]( Object::iComponent* _component )
+        {
+            ImGui::CloseCurrentPopup();
+            this->OpenCreationPopup( eCreationType::kComponent, _component->get_weak() );
+        } )
     .Complete();
 }
 
 void cObjectListTab::Draw()
 {
     const auto& manager = cSceneManager::get();
+
+    m_root_window_ = GImGui->CurrentWindow;
 
     m_context_menu_.Draw();
 
@@ -56,14 +80,20 @@ void cObjectListTab::Draw()
     {
         // TODO: The handle the scene still being marked as loaded when it's being destroyed.
         if( scene_meta->IsLoaded() )
+        {
+            scene_meta->LockAsset();
             _drawScene( static_cast< cScene& >( *scene_meta->GetAsset() ) ); // NOLINT(*-pro-type-static-cast-downcast)
+            scene_meta->UnlockAsset();
+        }
         else
         {
             ImGui::CollapsingHeader( scene_meta->GetName().c_str(), ImGuiTreeNodeFlags_Leaf );
-            m_scene_context_menu_.SetUserData( scene_meta.get() );
+            m_scene_context_menu_.SetNextUserData( scene_meta.get() );
             m_scene_context_menu_.Draw();
         }
     }
+
+    DrawCreationPopup();
 }
 
 void cObjectListTab::Destroy()
@@ -71,7 +101,106 @@ void cObjectListTab::Destroy()
 
 }
 
-void cObjectListTab::_drawScene( const cScene& _scene )
+void cObjectListTab::OpenCreationPopup( const eCreationType _type, const cWeak_Ptr< Object::cSceneItem >& _target )
+{
+    m_creation_type_   = _type;
+    m_creation_target_ = _target;
+    if( _target )
+        m_creation_target_scene_ = &_target->GetScene();
+    m_root_window_->IDStack.push_back( m_root_window_->IDStack.front() );
+    ImGui::OpenPopupEx( m_root_window_->GetID( _type == eCreationType::kObject ? "Object Creation" : "Component Creation" ) );
+    m_root_window_->IDStack.pop_back();
+}
+
+void cObjectListTab::DrawCreationPopup()
+{
+    if( m_creation_type_ == eCreationType::kNone )
+        return;
+
+    const bool is_object = m_creation_type_ == eCreationType::kObject;
+
+    bool open = true;
+    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove
+        | ImGuiWindowFlags_AlwaysAutoResize
+        | ImGuiWindowFlags_NoSavedSettings;
+
+    if( ImGui::BeginPopupModal( is_object ? "Object Creation" : "Component Creation", &open, flags ) )
+    {
+        if( ImGui::IsKeyPressed( ImGuiKey_Escape ) )
+            ImGui::CloseCurrentPopup();
+
+        if( m_derived_types_cache_.empty() )
+        {
+            static constexpr class_info_t& component_class = Object::iComponent::getStaticClass();
+            static constexpr class_info_t& object_class    = Object::cObject::getStaticClass();
+
+            auto& type_manager = Reflection::cType_Manager::get();
+            m_derived_types_cache_ = type_manager.GetDerivedTypes( is_object ? object_class : component_class );
+            if( !is_object )
+            {
+                std::erase_if( m_derived_types_cache_, []( class_info_t*& _type )
+                {
+                    return _type->isDerivedFrom( Object::Components::cInternal_Component::getStaticClass() );
+                } );
+            }
+        }
+
+        ImGui::Text( m_creation_type_ == eCreationType::kObject ? "Objet" : "Component" );
+        for( const auto& available_class : m_derived_types_cache_ )
+        {
+            ImGui::BeginDisabled( !available_class->IsDefaultConstructible() );
+
+            if( ImGui::Button( available_class->getRawName() ) )
+            {
+                ImGui::CloseCurrentPopup();
+
+                if( is_object )
+                {
+                    auto& scene = *m_creation_target_scene_;
+                    scene.AddObject( available_class->CreateDefaultShared().Cast< Object::cObject >() );
+
+                    if( auto object = m_creation_target_.DynCast< Object::cObject >() )
+                    {
+                        // TODO: Add object as child to other object.
+                    }
+                }
+                else if( m_creation_target_ ) // Verify
+                {
+                    // Component parent is
+                    auto new_component = available_class->CreateDefaultShared().Cast< Object::iComponent >();
+
+                    if( auto object = m_creation_target_.DynCast< Object::cObject >() )
+                    {
+                        object->AddComponent( new_component );
+                        new_component->SetParent( object->GetRoot() );
+                    }
+                    else if( auto component = m_creation_target_.DynCast< Object::iComponent >() )
+                    {
+                        object = component->GetObject();
+                        object->AddComponent( new_component );
+                        new_component->SetParent( component.Lock() );
+                    }
+                }
+
+                ImGui::EndDisabled();
+
+                // We don't need to try the rest.
+                break;
+            }
+
+            ImGui::EndDisabled();
+        }
+        ImGui::EndPopup();
+    }
+    else
+    {
+        m_creation_type_   = eCreationType::kNone;
+        m_creation_target_ = nullptr;
+        m_derived_types_cache_.clear();
+    }
+}
+
+void cObjectListTab::_drawScene( cScene& _scene )
 {
     auto& meta = *_scene.GetMeta();
     auto& selection_manager = Managers::cSelectionManager::get();
@@ -80,7 +209,7 @@ void cObjectListTab::_drawScene( const cScene& _scene )
 
     if( ImGui::CollapsingHeader( meta.GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
     {
-        m_scene_context_menu_.SetUserData( &meta );
+        m_scene_context_menu_.SetNextUserData( &_scene );
         m_scene_context_menu_.Draw();
 
         for( auto& object : _scene.GetObjects() )
@@ -109,7 +238,12 @@ void cObjectListTab::_drawObjectRecursive( Object::cObject& _object )
             _object.Destroy();
     }
 
-    if( !ImGui::TreeNodeEx( _object.GetUUID().ToString().c_str(), flags, "%s", _object.GetName().c_str() ) )
+    const bool open = ImGui::TreeNodeEx( _object.GetUUID().ToString().c_str(), flags, "%s", _object.GetName().c_str() );
+
+    m_object_context_menu_.SetNextUserData( &_object );
+    m_object_context_menu_.Draw();
+
+    if( !open )
         return;
 
     for( auto& object : children )
@@ -151,7 +285,12 @@ void cObjectListTab::_drawComponentsRecursive( Object::iComponent& _component )
             _component.Destroy();
     }
 
-    if( !ImGui::TreeNodeEx( _component.GetUUID().ToString().c_str(), flags, "%s", type_name.c_str() ) )
+    const bool open = ImGui::TreeNodeEx( _component.GetUUID().ToString().c_str(), flags, "%s", type_name.c_str() );
+
+    m_component_context_menu_.SetNextUserData( &_component );
+    m_component_context_menu_.Draw();
+
+    if( !open )
         return;
 
     for( auto& child : children )

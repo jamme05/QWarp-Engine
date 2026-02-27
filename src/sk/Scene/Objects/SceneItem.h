@@ -29,6 +29,8 @@ namespace sk::Object
         friend class sk::Object::iComponent;
         friend class sk::cSceneManager;
     public:
+        cSceneItem();
+
         // Destroy this Object/Component
         void Destroy();
         // Destroy a target Object/Component
@@ -42,6 +44,7 @@ namespace sk::Object
     private:
         // As this doesn't have a way to get itself shared. We're gonna have the object and component do it themselves.
         virtual void destroySelf() = 0;
+        virtual void setSceneRecursive( cScene& _scene ) = 0;
 
         cScene* m_scene_;
 		cUUID   m_uuid_;

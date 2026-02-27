@@ -123,6 +123,11 @@ bool cAsset_Meta::IsLoadingOrLoaded() const
     return IsLoading() || IsLoaded();
 }
 
+bool cAsset_Meta::IsUnloading() const
+{
+    return m_flags_ & kUnloading;
+}
+
 bool cAsset_Meta::HasMetadata() const
 {
     return m_flags_ & kMetadata;
@@ -396,6 +401,7 @@ void cAsset_Meta::setAsset( cAsset* _asset )
             m_lock_refs_.wait( locks );
 
         m_flags_ &= ~kLoaded;
+        m_flags_ |= kUnloading;
 
         // There seems to be some sort of race condition
         // So this ensures that the asset gets unreferenced before this thread gets stuck waiting for the memory tracker.
@@ -411,7 +417,7 @@ void cAsset_Meta::setAsset( cAsset* _asset )
         m_asset_->m_metadata_ = get_weak();
         m_asset_->m_uuid_     = m_uuid_;
         m_flags_ |=  kLoaded;
-        m_flags_ &= ~kLoading;
+        m_flags_ &= ~kLoading & ~kUnloading;
     }
     else
         m_flags_ &= ~kLoaded & ~kLoading;

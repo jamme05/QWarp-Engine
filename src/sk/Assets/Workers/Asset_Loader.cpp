@@ -67,7 +67,7 @@ void sk::Assets::Jobs::cAsset_Worker::load_asset( sAssetTask& _task, const bool 
         meta->m_dispatcher_.push_event( *meta, _refresh ? eEventType::kUpdated : eEventType::kLoaded );
 }
 
-void sk::Assets::Jobs::cAsset_Worker::save_asset(sAssetTask& _task)
+void sk::Assets::Jobs::cAsset_Worker::save_asset( sAssetTask& _task )
 {
     _task.loader( _task.path, _task.affected_assets, eAssetTask::kSaveAsset );
 }
@@ -77,7 +77,11 @@ void sk::Assets::Jobs::cAsset_Worker::unload_asset( sAssetTask& _task )
     if( !manager->IsShuttingDown() )
     {
         for( auto& meta : _task.affected_assets )
+        {
             meta->m_dispatcher_.push_event( *meta, eEventType::kUnload );
+            meta->m_flags_ &= ~cAsset_Meta::kLoaded;
+            meta->m_flags_ |= cAsset_Meta::kUnloading;
+        }
     }
     
     _task.loader( _task.path, _task.affected_assets, eAssetTask::kUnloadAsset );

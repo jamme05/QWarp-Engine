@@ -2,12 +2,13 @@
 #pragma once
 
 #include <sk/Scene/Components/Component.h>
+#include <sk/Scene/Components/Internal/Internal_Component.h>
 
 #include <set>
 
 namespace sk::Editor::Components
 {
-    SK_COMPONENT_CLASS( EditorInternalComponent )
+    SK_COMPONENT_CLASS( EditorInternalComponent, Object::Components::cInternal_Component )
     {
         SK_CLASS_BODY( EditorInternalComponent )
 

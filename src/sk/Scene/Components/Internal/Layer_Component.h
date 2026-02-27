@@ -3,6 +3,7 @@
 #pragma once
 
 #include <sk/Scene/Components/Component.h>
+#include <sk/Scene/Components/Internal/Internal_Component.h>
 
 namespace sk::Scene
 {
@@ -11,7 +12,7 @@ namespace sk::Scene
 
 namespace sk::Object::Components
 {
-    SK_COMPONENT_CLASS( Layer_Info_Component )
+    SK_COMPONENT_CLASS( Layer_Info_Component, cInternal_Component )
     {
         SK_CLASS_BODY( Layer_Info_Component )
         friend class sk::Scene::cLayer_Manager;

@@ -9,6 +9,13 @@
 
 using namespace sk::Object;
 
+cSceneItem::cSceneItem()
+: m_scene_( nullptr )
+, m_uuid_( GenerateRandomUUID() )
+{
+
+}
+
 void cSceneItem::Destroy()
 {
     destroySelf();

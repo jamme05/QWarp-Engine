@@ -11,4 +11,5 @@ namespace sk::Gui
     extern void ImGuiNewFrame();
     extern void ImGuiRender();
     extern void ImGuiShutdown();
+    extern bool BeginCentered( const char* _name );
 } // sk::ImGui

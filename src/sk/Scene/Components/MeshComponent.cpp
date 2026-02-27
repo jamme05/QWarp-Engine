@@ -10,6 +10,12 @@
 
  using namespace sk::Object::Components;
 
+cMeshComponent::cMeshComponent()
+{
+	m_mesh_     = cAsset_Manager::get().getAssetByName( "Cube.002" );
+	m_material_ = cAsset_Manager::get().getAssetByName( "Material Test" );
+}
+
 cMeshComponent::cMeshComponent( const cShared_ptr< cAsset_Meta >& _mesh, const cShared_ptr< cAsset_Meta >& _material )
 : m_mesh_( get_weak() )
 , m_material_( get_weak() )

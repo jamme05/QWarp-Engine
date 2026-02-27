@@ -9,6 +9,7 @@
 
 #include <sk/Assets/Management/Asset_Manager.h>
 #include <sk/Assets/Utils/Asset_List.h>
+#include <sk/Graphics/Renderer.h>
 #include <sk/Scene/Managers/CameraManager.h>
 #include <sk/Scene/Managers/Internal_Component_Manager.h>
 #include <sk/Scene/Managers/Layer_Manager.h>
@@ -70,8 +71,13 @@ cSceneManager::cSceneManager()
 }
 cSceneManager::~cSceneManager()
 {
-	m_scenes_.clear();
 	m_loaded_scenes_.clear();
+
+	while( std::ranges::any_of( m_scenes_, []( const auto& _pair ){ return _pair.second->IsUnloading(); } ) )
+	{
+		Graphics::cRenderer::get().Update();
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	}
 
 	Scene::cInternal_Component_Manager::shutdown();
 	Scene::cLight_Manager::shutdown();
