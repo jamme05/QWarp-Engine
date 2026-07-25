@@ -1,3 +1,5 @@
+# DISCLAMER: This project has been migrated to codeberg and won't recive any updates here.
+
 # Skape Engine
 Skape as in Shape or Skapelse (you're allowed to cringe)
 
